@@ -156,8 +156,6 @@ async def set_grades(user, session, courses_names, courses_ids, active_courses_i
                 index_updated += 1
                 updated_grades[index_updated] = item[1]
     
-    print(new_grades)
-    print(updated_grades)
     for item in new_grades:
         if len(item) < 20:
             continue
