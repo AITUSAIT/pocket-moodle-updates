@@ -6,6 +6,7 @@ import time
 import dotenv
 
 from functions import aioredis
+from functions.logger import logger
 from functions.moodle import check_updates
 
 
@@ -30,13 +31,13 @@ async def run_check(user_id):
 
     result = await check_updates(user)
     if result == 0:
-        print(f'{user_id} - Invalid Login ')
+        logger.info(f'{user_id} - Invalid Login ')
     elif result == -1:
-        print(f'{user_id} - Error')
+        logger.info(f'{user_id} - Error')
     elif result == 1:
-        print(f'{user_id} - Success')
+        logger.info(f'{user_id} - Success')
     else:
-        print(f'{user_id} - {result}')
+        logger.info(f'{user_id} - {result}')
 
 
 async def main():
@@ -58,8 +59,12 @@ async def main():
                     os.environ["ATT_STATE"] = "1"
                     await run_check(keys[i])
 
-        print(f"{(time.time() - start_time)} секунд\n")
+        logger.info(f"{(time.time() - start_time)} секунд\n")
     await aioredis.close()
 
 
-asyncio.run(main())
+try:
+    asyncio.run(main())
+except Exception as exc:
+    logger.error(exc, exc_info=True)
+    logger.info('End')

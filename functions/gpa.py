@@ -7,6 +7,7 @@ import structlog
 from bs4 import BeautifulSoup
 
 from functions import aioredis
+from functions.logger import logger
 
 
 async def get_cookies_data(session):
@@ -73,5 +74,5 @@ async def login_and_get_gpa(user_id, soup):
         await aioredis.set_key(user_id, 'gpa', data['gpa'])
         return 1
     except Exception as exc:
-        print(traceback.format_exc(exc))
+        logger.error(user_id, exc_info=True)
         return -1

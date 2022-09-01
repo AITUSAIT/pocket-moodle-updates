@@ -16,6 +16,7 @@ from functions.gpa import get_soup, login_and_get_gpa
 from functions.moodle_functions import (add_new_courses, add_new_courses_deadlines, auth_moodle,
                                         clear_courses, get_assignments_of_course, get_courses, get_grades_of_course)
 from functions import aioredis
+from functions.logger import logger
 
 dotenv.load_dotenv()
 
@@ -27,6 +28,11 @@ login = os.getenv('LOGIN')
 passwd = os.getenv('PASSWD')
 
 
+
+async def delete_user(chat_id):
+    await aioredis.redis.delete(chat_id)
+
+
 def send(chat_id, text):
     try:
         tbt = TeleBot(TOKEN, parse_mode="Markdown")
@@ -35,9 +41,10 @@ def send(chat_id, text):
         markup.add(switch_button)
         tbt.send_message(chat_id, text, reply_markup=markup, disable_notification=True)
     except Exception as exc:
-        print(traceback.format_exc(exc))
         if "bot was blocked by the user" in str(exc) or "chat not found" in str(exc):
-            return
+            asyncio.run(delete_user(chat_id))
+        else:
+            logger.error(chat_id, exc_info=True)
 
 
 async def get_cookies(user_id, BARCODE, PASSWD):
@@ -126,7 +133,7 @@ async def get_cookies(user_id, BARCODE, PASSWD):
             else:
                 return {}, False, 'error'
         except Exception as exc:
-            print(traceback.format_exc(exc))
+            logger.error(user_id, exc_info=True)
             return {}, False, 'error'
 
 
@@ -245,5 +252,5 @@ async def check_updates(user):
                 return 0
     except Exception as exc:
         await session.close()
-        print(traceback.format_exception(exc))
+        logger.error(user['user_id'], exc_info=True)
         return -1

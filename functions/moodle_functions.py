@@ -181,7 +181,6 @@ async def get_grades_of_course(session, user, key):
                         updated_grades += f"\n\n  {user['courses'][key]['name']}:"
                     updated_grades += f"\n      - [{col_name}]({moodle+url_to_course}) / {old_grade} -> {col_percentage}"
             except Exception as exc:
-                # print(user['courses'][key]['name'], exc)
                 continue
     return [new_grades, updated_grades]
 
@@ -362,7 +361,5 @@ async def get_assignments_of_course(s, user, key, proxy):
                                     upcoming_deadlines += f"\n      Remaining: {diff_time}\n"
                                     user['courses'][key]['assignments'][x]['status'] = 1
             except Exception as exc:
-                # print(request, exc)
-                # print(exc)
                 continue
         return updated_deadlines, new_deadlines, upcoming_deadlines
