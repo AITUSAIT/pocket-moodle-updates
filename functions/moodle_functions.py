@@ -4,6 +4,8 @@ import os
 import re
 from bs4 import BeautifulSoup
 
+from functions.logger import logger
+
 
 async def auth_moodle(data, s):
     login, password = data.values()
@@ -115,16 +117,12 @@ async def get_grades_of_course(session, user, key):
 
         rows = tbody.find_all('tr')
 
-        percentages = {}
-        for x in user['courses'][key]['grades']:
-            percentages[user['courses'][key]['grades'][x]['id']] = user['courses'][key]['grades'][x]['percentage']
-
         list_ids = {
-            'Register Midterm': 0,
-            'Register Endterm': 1,
-            'Register Term': 2,
-            'Register Final': 3,
-            'Course total': 4,
+            'Register Midterm': '0',
+            'Register Endterm': '1',
+            'Register Term': '2',
+            'Register Final': '3',
+            'Course total': '4',
         }
 
         temp_rows = []
@@ -141,19 +139,15 @@ async def get_grades_of_course(session, user, key):
             except: continue
             col_percentage = str(row.find('td', {'class': 'column-percentage'}).text)
             temp = {'name': col_name, 'percentage': col_percentage, 'id': _id}
-            if _id not in percentages.keys():
-                if not user['ignore'] and '%' in col_percentage:
+            if _id not in user['courses'][key]['grades'].keys():
+                if '%' in col_percentage:
                     if f"\n\n  {user['courses'][key]['name']}:" not in new_grades:
                         new_grades += f"\n\n  {user['courses'][key]['name']}:"
                     new_grades += f"\n      - [{col_name}]({moodle+url_to_course}) / {col_percentage}"
                 user['courses'][key]['grades'][_id] = temp
-            elif _id in percentages.keys() and str(col_percentage) != str(percentages[_id]):
-                for x in user['courses'][key]['grades']:
-                    if user['courses'][key]['grades'][x]['id'] == _id:
-                        old_grade = user['courses'][key]['grades'][x]['percentage']
-                        user['courses'][key]['grades'][x]['percentage'] = col_percentage
-                old_grade = user['courses'][key]['grades'][x]['percentage']
-                user['courses'][key]['grades'][x]['percentage'] = col_percentage
+            elif _id in user['courses'][key]['grades'].keys() and str(col_percentage) != str(user['courses'][key]['grades'][_id]['percentage']):
+                old_grade = user['courses'][key]['grades'][_id]['percentage']
+                user['courses'][key]['grades'][_id]['percentage'] = col_percentage
                 if f"\n\n  {user['courses'][key]['name']}:" not in updated_grades:
                     updated_grades += f"\n\n  {user['courses'][key]['name']}:"
                 updated_grades += f"\n      - [{col_name}]({moodle+url_to_course}) / {old_grade} -> {col_percentage}"
@@ -164,19 +158,15 @@ async def get_grades_of_course(session, user, key):
                 col_name = str(row.find('th', {'class': 'column-itemname'}).contents[0].text)
                 col_percentage = str(row.find('td', {'class': 'column-percentage'}).text)
                 temp = {'name': col_name, 'percentage': col_percentage, 'id': id}
-                if id not in percentages.keys():
-                    if not user['ignore'] and '%' in col_percentage:
+                if id not in user['courses'][key]['grades'].keys():
+                    if '%' in col_percentage:
                         if f"\n\n  {user['courses'][key]['name']}:" not in new_grades:
                             new_grades += f"\n\n  {user['courses'][key]['name']}:"
                         new_grades += f"\n      - [{col_name}]({moodle+url_to_course}) / {col_percentage}"
                     user['courses'][key]['grades'][id] = temp
-                elif id in percentages.keys() and str(col_percentage) != str(percentages[id]):
-                    for x in user['courses'][key]['grades']:
-                        if user['courses'][key]['grades'][x]['id'] == id:
-                            old_grade = user['courses'][key]['grades'][x]['percentage']
-                            user['courses'][key]['grades'][x]['percentage'] = col_percentage
-                    old_grade = user['courses'][key]['grades'][x]['percentage']
-                    user['courses'][key]['grades'][x]['percentage'] = col_percentage
+                elif id in user['courses'][key]['grades'].keys() and str(col_percentage) != str(user['courses'][key]['grades'][id]['percentage']):
+                    old_grade = user['courses'][key]['grades'][id]['percentage']
+                    user['courses'][key]['grades'][id]['percentage'] = col_percentage
                     if f"\n\n  {user['courses'][key]['name']}:" not in updated_grades:
                         updated_grades += f"\n\n  {user['courses'][key]['name']}:"
                     updated_grades += f"\n      - [{col_name}]({moodle+url_to_course}) / {old_grade} -> {col_percentage}"

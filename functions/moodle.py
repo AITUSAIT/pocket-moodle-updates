@@ -155,22 +155,23 @@ async def set_grades(user, session, courses_names, courses_ids, active_courses_i
                 new_grades[index_new] += item[0]
             else:
                 index_new += 1
-                new_grades[index_new] = item[0]
+                new_grades.append(item[0])
 
             if len(updated_grades[index_updated]) < 3500:
                 updated_grades[index_updated] += item[1]
             else:
                 index_updated += 1
-                updated_grades[index_updated] = item[1]
-    
-    for item in new_grades:
-        if len(item) < 20:
-            continue
-        send(user['user_id'], item)
-    for item in updated_grades:
-        if len(item) < 20:
-            continue
-        send(user['user_id'], item)
+                updated_grades.append(item[1])
+
+    if not int(user['ignore']):
+        for item in new_grades:
+            if len(item) < 20:
+                continue
+            send(user['user_id'], item)
+        for item in updated_grades:
+            if len(item) < 20:
+                continue
+            send(user['user_id'], item)
 
 
 async def set_deadlines(user, session, courses_names, courses_ids, active_courses_ids, proxy):
@@ -193,30 +194,31 @@ async def set_deadlines(user, session, courses_names, courses_ids, active_course
                 updated_deadlines[index_updated] += item[0]
             else:
                 index_updated += 1
-                updated_deadlines[index_updated] = item[0]
+                updated_deadlines.append(item[0])
             if len(new_deadlines[index_new]) < 3500:
                 new_deadlines[index_new] += item[1]
             else:
                 index_new += 1
-                new_deadlines[index_new] = item[1]
+                new_deadlines.append(item[1])
             if len(upcoming_deadlines[index_upcoming]) < 3500:
                 upcoming_deadlines[index_upcoming] += item[2]
             else:
                 index_upcoming += 1
-                upcoming_deadlines[index_upcoming] = item[2]
+                upcoming_deadlines.append(item[2])
     
-    for item in updated_deadlines:
-        if len(item) < 20:
-            continue
-        send(user['user_id'], item)
-    for item in new_deadlines:
-        if len(item) < 20:
-            continue
-        send(user['user_id'], item)
-    for item in upcoming_deadlines:
-        if len(item) < 20:
-            continue
-        send(user['user_id'], item)
+    if not int(user['ignore']):
+        for item in updated_deadlines:
+            if len(item) < 20:
+                continue
+            send(user['user_id'], item)
+        for item in new_deadlines:
+            if len(item) < 20:
+                continue
+            send(user['user_id'], item)
+        for item in upcoming_deadlines:
+            if len(item) < 20:
+                continue
+            send(user['user_id'], item)
 
 
 async def check_updates(user):
