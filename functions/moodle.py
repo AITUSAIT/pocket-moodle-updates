@@ -163,7 +163,7 @@ async def set_grades(user, session, courses_names, courses_ids, active_courses_i
                 index_updated += 1
                 updated_grades.append(item[1])
 
-    if not int(user['ignore']):
+    if not int(user['ignore']) and await aioredis.is_active_sub(user['user_id']):
         for item in new_grades:
             if len(item) < 20:
                 continue
@@ -206,7 +206,7 @@ async def set_deadlines(user, session, courses_names, courses_ids, active_course
                 index_upcoming += 1
                 upcoming_deadlines.append(item[2])
     
-    if not int(user['ignore']):
+    if not int(user['ignore']) and await aioredis.is_active_sub(user['user_id']):
         for item in updated_deadlines:
             if len(item) < 20:
                 continue

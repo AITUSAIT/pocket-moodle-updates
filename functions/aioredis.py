@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 
 import aioredis
@@ -41,6 +42,17 @@ async def if_user(user_id):
         return False
     else:
         return True
+
+
+async def is_active_sub(user_id):
+    if await if_user(user_id):
+        date_str = await get_key(user_id, 'end_date')
+        if datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S.%f') > datetime.now():
+            return True
+        else:
+            return False
+    else:
+        return False
 
 
 async def is_activaited_demo(user_id):
