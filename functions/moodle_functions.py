@@ -362,4 +362,4 @@ async def get_assignments_of_course(s, user, key, proxy):
                                     user['courses'][key]['assignments'][x]['status'] = 1
             except Exception as exc:
                 continue
-        return updated_deadlines, new_deadlines, upcoming_deadlines
+        return [updated_deadlines, new_deadlines, upcoming_deadlines]
