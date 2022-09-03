@@ -31,13 +31,13 @@ async def run_check(user_id):
 
     result = await check_updates(user)
     if result == 0:
-        logger.info(f'{user_id} - Invalid Login ')
+        logger.info(f"{user_id} - {user['barcode']} - Invalid Login ")
     elif result == -1:
-        logger.info(f'{user_id} - Error')
+        logger.info(f"{user_id} - {user['barcode']} - Error")
     elif result == 1:
-        logger.info(f'{user_id} - Success')
+        logger.info(f"{user_id} - {user['barcode']} - Success")
     else:
-        logger.info(f'{user_id} - {result}')
+        logger.info(f"{user_id} - {user['barcode']} - {result}")
 
 
 async def main():
