@@ -45,12 +45,16 @@ async def if_user(user_id):
 
 
 async def is_active_sub(user_id):
-    if await if_user(user_id):
-        date_str = await get_key(user_id, 'end_date')
-        if datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S.%f') > datetime.now():
-            return True
-        else:
-            return False
+    if not await if_user(user_id):
+        return False
+
+    date_str = await get_key(user_id, 'end_date')
+
+    if date_str is None:
+        return False
+
+    if datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S.%f') > datetime.now():
+        return True
     else:
         return False
 
