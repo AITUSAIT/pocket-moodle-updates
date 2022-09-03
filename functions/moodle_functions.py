@@ -1,10 +1,7 @@
-import asyncio
 from datetime import datetime, timedelta
 import os
 import re
 from bs4 import BeautifulSoup
-
-from functions.logger import logger
 
 
 async def auth_moodle(data, s):
@@ -235,7 +232,6 @@ async def get_attendance(soup, s, data, i):
     for item in soup.find_all('a', {'class': 'aalink'}):
         if 'attendance' in item.get('href'):
             att_id = item.get('href').replace('https://moodle.astanait.edu.kz/mod/attendance/view.php?id=', '')
-            await asyncio.sleep(5)
             if os.getenv('ATT_STATE') == "1":
                 os.environ["ATT_STATE"] = "0"
                 await get_att_stat(s, data, i, att_id)
@@ -291,8 +287,10 @@ async def get_assignments_of_course(s, user, key, proxy):
             'li', {"class": "activity assign modtype_assign"})
         assignments = assignments1 + assignments2
 
-        await asyncio.sleep(5)
-        await get_attendance(soup, s, user, key)
+        try:
+            await get_attendance(soup, s, user, key)
+        except:
+            ...
 
         for assignment in assignments:
             try:

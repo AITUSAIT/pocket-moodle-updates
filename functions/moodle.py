@@ -1,7 +1,6 @@
 import asyncio
 import json
 import os
-import traceback
 from asyncio import sleep
 
 import aiohttp
@@ -26,7 +25,6 @@ host = os.getenv('HOST')
 port = os.getenv('PORT')
 login = os.getenv('LOGIN')
 passwd = os.getenv('PASSWD')
-
 
 
 async def delete_user(chat_id):
@@ -254,5 +252,5 @@ async def check_updates(user):
                 return 0
     except Exception as exc:
         await session.close()
-        logger.error(user['user_id'], exc_info=True)
+        logger.error(exc, exc_info=True)
         return -1
