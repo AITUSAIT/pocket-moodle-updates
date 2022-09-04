@@ -80,7 +80,7 @@ async def get_cookies(user_id, BARCODE, PASSWD):
             try:
                 error = await session.get_element('div[id=usernameError]')
                 if await error.is_displayed():
-                    return {}, False, 'Invalid Login \(barcode\)'
+                    return {}, False, 'Invalid Login (barcode)'
             except:
                 pass
 
@@ -102,13 +102,13 @@ async def get_cookies(user_id, BARCODE, PASSWD):
             try:
                 error = await session.get_element('div[id=passwordError]')
                 if await error.is_displayed():
-                    return {}, False, 'Invalid Login \(passwd\)'
+                    return {}, False, 'Invalid Login (passwd)'
             except:
                 pass
             try:
                 error = await session.get_element('input[id=idSubmit_ProofUp_Redirect]')
                 if await error.is_displayed():
-                    return {}, False, 'Invalid Login \(proof\)'
+                    return {}, False, 'Invalid Login (proof)'
             except:
                 pass
 
