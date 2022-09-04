@@ -33,7 +33,7 @@ async def run_check(user_id):
     if result == 0:
         logger.info(f"{user_id} - {user['barcode']} - Invalid Login ")
         if await aioredis.check_if_msg(user_id):
-            send(user_id, 'Invalid Login\nTry /register_moodle to fix it')
+            send(user_id, 'Invalid Login\nTry /register\_moodle to fix it')
     elif result == -1:
         logger.info(f"{user_id} - {user['barcode']} - Error")
     elif result == 1:
@@ -41,7 +41,7 @@ async def run_check(user_id):
     else:
         logger.info(f"{user_id} - {user['barcode']} - {result}")
         if await aioredis.check_if_msg(user_id):
-            send(user_id, result + '\nTry /register_moodle to fix it')
+            send(user_id, result + '\nTry /register\_moodle to fix it')
 
 
 async def main():
