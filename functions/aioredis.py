@@ -77,6 +77,7 @@ async def is_registered_moodle(user_id):
 
 async def check_if_msg(user_id):
     if not await redis.hexists(user_id, 'message'):
+        await redis.hset(user_id, 'message', 1)
         return False
 
     message = int(await redis.hget(user_id, 'message'))
