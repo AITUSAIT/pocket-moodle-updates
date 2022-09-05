@@ -107,6 +107,9 @@ async def get_grades_of_course(session, user, key):
     moodle = 'https://moodle.astanait.edu.kz'
     url_to_course = f"/grade/report/user/index.php?id={user['courses'][key]['id']}"
 
+    if user['courses'][key]['active'] == False and user['courses'][key].get('grades', None):
+        return [new_grades, updated_grades]
+
     async with session.get(url_to_course, timeout=15) as request:
         rText = await request.read()
         soup = BeautifulSoup(rText.decode('utf-8'), 'html.parser')
@@ -272,6 +275,9 @@ async def get_assignments_of_course(s, user, key, proxy):
 
     url = 'https://moodle.astanait.edu.kz/mod/assign/view.php?id='
     url_to_course = f"/course/view.php?id={user['courses'][key]['id']}"
+
+    if user['courses'][key]['active'] == False and user['courses'][key].get('assignments', None):
+        return [updated_deadlines, new_deadlines, upcoming_deadlines]
 
     assignments_ids = []
     for assignment in user['courses'][key]['assignments']:
