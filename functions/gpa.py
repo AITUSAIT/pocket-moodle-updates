@@ -74,5 +74,5 @@ async def login_and_get_gpa(user_id, soup):
         await aioredis.set_key(user_id, 'gpa', data['gpa'])
         return 1
     except Exception as exc:
-        logger.error(user_id, exc_info=True)
+        # logger.error(user_id, exc_info=True)
         return -1

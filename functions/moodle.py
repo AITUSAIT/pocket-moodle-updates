@@ -126,10 +126,7 @@ async def get_cookies(user_id, BARCODE, PASSWD):
 
             if count < 100:
                 cookies = await get_cookies_data(session)
-                try:
-                    await login_and_get_gpa(user_id, await get_soup(session))
-                except:
-                    ...
+                await login_and_get_gpa(user_id, await get_soup(session))
                 return cookies, True, ''
             else:
                 return {}, False, 'error'
