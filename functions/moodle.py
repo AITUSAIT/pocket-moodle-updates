@@ -246,6 +246,7 @@ async def check_updates(user):
                 await set_deadlines(user, session, courses_names, courses_ids, active_courses_ids, proxy)
 
                 await aioredis.redis.hset(user['user_id'], 'courses', json.dumps(user['courses']))
+                await aioredis.redis.hset(user['user_id'], 'att_statistic', json.dumps(user['att_statistic']))
                 await aioredis.redis.hset(user['user_id'], 'ignore', 0)
                 return 1
             else:

@@ -194,11 +194,10 @@ async def get_att_stat(s, data, i, att_id):
         c0_arr = table.find_all('td', {'class':'cell c0'})
         c1_arr = table.find_all('td', {'class':'cell c1 lastcol'})
         
-        data['courses'][i]['attendance'] = {}
-        data['att_statistic'] = {}
+        data['courses']['att_statistic'] = {}
         for j in range(0, len(c0_arr)):
             text = str(c0_arr[j].getText().replace(':', ''))
-            data['att_statistic'][text] = int(c1_arr[j].getText())
+            data['courses']['att_statistic'][text] = int(c1_arr[j].getText())
 
 
 async def get_assignment_due(assignment, s):
@@ -231,13 +230,13 @@ async def get_assignment_due(assignment, s):
         return id, due, state
 
 
-async def get_attendance(soup, s, data, i):
+async def get_attendance(soup, s, data, key):
     for item in soup.find_all('a', {'class': 'aalink'}):
         if 'attendance' in item.get('href'):
             att_id = item.get('href').replace('https://moodle.astanait.edu.kz/mod/attendance/view.php?id=', '')
             if os.getenv('ATT_STATE') == "1":
                 os.environ["ATT_STATE"] = "0"
-                await get_att_stat(s, data, i, att_id)
+                await get_att_stat(s, data, key, att_id)
 
             href = (item.get('href')+'&view=5').replace('https://moodle.astanait.edu.kz', '')
             async with s.get(href, timeout=15) as request:
@@ -247,10 +246,10 @@ async def get_attendance(soup, s, data, i):
                 c0_arr = table.find_all('td', {'class':'cell c0'})
                 c1_arr = table.find_all('td', {'class':'cell c1 lastcol'})
 
-                data['courses'][i]['attendance'] = {}
+                data['courses'][key]['attendance'] = {}
                 for j in range(0, len(c0_arr)):
                     text = str(c0_arr[j].getText().replace(':', ''))
-                    data['courses'][i]['attendance'][text] = c1_arr[j].getText()
+                    data['courses'][key]['attendance'][text] = c1_arr[j].getText()
                 break
 
 
