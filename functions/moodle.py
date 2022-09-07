@@ -1,4 +1,5 @@
 import asyncio
+from doctest import Example
 import json
 import os
 from asyncio import sleep
@@ -6,6 +7,7 @@ from asyncio import sleep
 import aiohttp
 import dotenv
 from arsenic import browsers, get_session, services
+from arsenic.errors import UnknownArsenicError
 from telebot import TeleBot, types
 from webdriver_manager.chrome import ChromeDriverManager
 
@@ -95,6 +97,8 @@ async def get_cookies(user_id, BARCODE, PASSWD):
                         await passwd.send_keys(PASSWD)
                         await button.click()
                         break
+                except UnknownArsenicError as UAE:
+                    return {}, False, 'error'
                 except:
                     await sleep(0.1)
 
