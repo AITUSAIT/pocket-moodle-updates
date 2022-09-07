@@ -194,10 +194,10 @@ async def get_att_stat(s, data, i, att_id):
         c0_arr = table.find_all('td', {'class':'cell c0'})
         c1_arr = table.find_all('td', {'class':'cell c1 lastcol'})
         
-        data['courses']['att_statistic'] = {}
+        data['att_statistic'] = {}
         for j in range(0, len(c0_arr)):
             text = str(c0_arr[j].getText().replace(':', ''))
-            data['courses']['att_statistic'][text] = int(c1_arr[j].getText())
+            data['att_statistic'][text] = int(c1_arr[j].getText())
 
 
 async def get_assignment_due(assignment, s):
