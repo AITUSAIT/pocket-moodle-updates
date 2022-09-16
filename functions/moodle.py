@@ -1,5 +1,4 @@
 import asyncio
-from doctest import Example
 import json
 import os
 from asyncio import sleep
@@ -8,7 +7,8 @@ import aiohttp
 import dotenv
 from arsenic import browsers, get_session, services
 from arsenic.errors import UnknownArsenicError
-from telebot import TeleBot, types
+from aiogram import Bot, Dispatcher, types
+from aiogram.utils import exceptions, executor
 from webdriver_manager.chrome import ChromeDriverManager
 
 from functions.functions import (decrypt, get_cookies_data,
@@ -28,23 +28,36 @@ port = os.getenv('PORT')
 login = os.getenv('LOGIN')
 passwd = os.getenv('PASSWD')
 
+bot = Bot(token=TOKEN, parse_mode=types.ParseMode.HTML)
+dp = Dispatcher(bot)
+
 
 async def delete_user(chat_id):
     await aioredis.redis.delete(chat_id)
 
 
-def send(chat_id, text):
+async def send_msg(chat_id, text):
+    markup = types.InlineKeyboardMarkup()
+    switch_button = types.InlineKeyboardButton(text='Delete', callback_data="delete")
+    markup.add(switch_button)
     try:
-        tbt = TeleBot(TOKEN, parse_mode="Markdown")
-        markup = types.InlineKeyboardMarkup()
-        switch_button = types.InlineKeyboardButton(text='Delete', callback_data="delete")
-        markup.add(switch_button)
-        tbt.send_message(chat_id, text, reply_markup=markup, disable_notification=True)
-    except Exception as exc:
-        if "bot was blocked by the user" in str(exc) or "chat not found" in str(exc):
-            asyncio.run(delete_user(chat_id))
-        else:
-            logger.error(chat_id, exc_info=True)
+        bot.send_message(chat_id, text, reply_markup=markup, disable_notification=True)
+    except exceptions.BotBlocked:
+        await delete_user(chat_id)
+    except exceptions.ChatNotFound:
+        await delete_user(chat_id)
+    except exceptions.RetryAfter as e:
+        await asyncio.sleep(e.timeout)
+        return await send_msg(chat_id, text)
+    except exceptions.UserDeactivated:
+        await delete_user(chat_id)
+    except exceptions.TelegramAPIError:
+        logger.error(chat_id, exc_info=True)
+        await delete_user(chat_id)
+
+
+def send(chat_id, text):
+    executor.start(dp, send_msg(chat_id, text))
 
 
 async def get_cookies(user_id, BARCODE, PASSWD):
@@ -98,7 +111,7 @@ async def get_cookies(user_id, BARCODE, PASSWD):
                         await button.click()
                         break
                 except UnknownArsenicError as UAE:
-                    return {}, False, 'error'
+                    return {}, False, -1
                 except:
                     await sleep(0.1)
 
@@ -133,10 +146,10 @@ async def get_cookies(user_id, BARCODE, PASSWD):
                 await login_and_get_gpa(user_id, await get_soup(session))
                 return cookies, True, ''
             else:
-                return {}, False, 'error'
+                return {}, False, -1
         except Exception as exc:
             logger.error(user_id, exc_info=True)
-            return {}, False, 'error'
+            return {}, False, -1
 
 
 async def set_grades(user, session, courses_names, courses_ids, active_courses_ids):

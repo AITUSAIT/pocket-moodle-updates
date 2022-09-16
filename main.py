@@ -9,7 +9,6 @@ from functions import aioredis
 from functions.logger import logger
 from functions.moodle import check_updates, send
 
-
 dotenv.load_dotenv()
 
 REDIS_HOST = os.getenv('REDIS_HOST')
