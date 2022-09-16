@@ -3,6 +3,8 @@ import os
 import re
 from bs4 import BeautifulSoup
 
+from functions.functions import clear_MD
+
 
 async def auth_moodle(data, s):
     login, password = data.values()
@@ -80,25 +82,12 @@ def add_new_courses(user, courses_names, courses_ids, courses):
         course = {
             'id': courses_ids[i],
             'name': courses_names[i],
+            'active': True,
             'grades': {},
             'assignments': {},
         }
         if courses_ids[i] not in courses:
             user['courses'][courses_ids[i]] = course
-
-
-def add_new_courses_deadlines(courses_names, courses_ids, courses, deadlines):
-    for i in range(0, len(courses_names)):
-        course = {
-            'id': courses_ids[i],
-            'name': courses_names[i],
-            'grades': {},
-            'assignments': {}
-        }
-        if courses_ids[i] not in courses:
-            deadlines['courses'][courses_ids[i]] = course
-
-    return deadlines
 
 
 async def get_grades_of_course(session, user, key):
@@ -115,7 +104,10 @@ async def get_grades_of_course(session, user, key):
         soup = BeautifulSoup(rText.decode('utf-8'), 'html.parser')
         tbody = soup.find('tbody')
 
-        rows = tbody.find_all('tr')
+        try:
+            rows = tbody.find_all('tr')
+        except:
+            return [new_grades, updated_grades]
 
         list_ids = {
             'Register Midterm': '0',
@@ -124,6 +116,8 @@ async def get_grades_of_course(session, user, key):
             'Register Final': '3',
             'Course total': '4',
         }
+
+        course_name = user['courses'][key]['name']
 
         temp_rows = []
         for row in rows:
@@ -139,18 +133,18 @@ async def get_grades_of_course(session, user, key):
             except: continue
             col_percentage = str(row.find('td', {'class': 'column-percentage'}).text)
             temp = {'name': col_name, 'percentage': col_percentage, 'id': _id}
-            if _id not in user['courses'][key]['grades'].keys():
+            if _id not in user['courses'][key]['grades']:
                 if '%' in col_percentage:
-                    if f"\n\n  {user['courses'][key]['name']}:" not in new_grades:
-                        new_grades += f"\n\n  {user['courses'][key]['name']}:"
-                    new_grades += f"\n      - [{col_name}]({moodle+url_to_course}) / {col_percentage}"
+                    if course_name not in new_grades:
+                        new_grades += f"\n\n  [{course_name}]({moodle+url_to_course}):"
+                    new_grades += f"\n      {clear_MD(col_name)} / {clear_MD(col_percentage)}"
                 user['courses'][key]['grades'][_id] = temp
-            elif _id in user['courses'][key]['grades'].keys() and str(col_percentage) != str(user['courses'][key]['grades'][_id]['percentage']):
+            elif _id in user['courses'][key]['grades'] and str(col_percentage) != str(user['courses'][key]['grades'][_id]['percentage']):
                 old_grade = user['courses'][key]['grades'][_id]['percentage']
                 user['courses'][key]['grades'][_id]['percentage'] = col_percentage
-                if f"\n\n  {user['courses'][key]['name']}:" not in updated_grades:
-                    updated_grades += f"\n\n  {user['courses'][key]['name']}:"
-                updated_grades += f"\n      - [{col_name}]({moodle+url_to_course}) / {old_grade} -> {col_percentage}"
+                if course_name not in updated_grades:
+                    updated_grades += f"\n\n  [{course_name}]({moodle+url_to_course}):"
+                updated_grades += f"\n      {clear_MD(col_name)} / {clear_MD(old_grade)} \-\> {clear_MD(col_percentage)}"
 
         for row in rows:
             try:
@@ -158,18 +152,18 @@ async def get_grades_of_course(session, user, key):
                 col_name = str(row.find('th', {'class': 'column-itemname'}).contents[0].text)
                 col_percentage = str(row.find('td', {'class': 'column-percentage'}).text)
                 temp = {'name': col_name, 'percentage': col_percentage, 'id': id}
-                if id not in user['courses'][key]['grades'].keys():
+                if id not in user['courses'][key]['grades']:
                     if '%' in col_percentage:
-                        if f"\n\n  {user['courses'][key]['name']}:" not in new_grades:
-                            new_grades += f"\n\n  {user['courses'][key]['name']}:"
-                        new_grades += f"\n      - [{col_name}]({moodle+url_to_course}) / {col_percentage}"
+                        if course_name not in new_grades:
+                            new_grades += f"\n\n  [{course_name}]({moodle+url_to_course}):"
+                        new_grades += f"\n      {clear_MD(col_name)} / {clear_MD(col_percentage)}"
                     user['courses'][key]['grades'][id] = temp
                 elif id in user['courses'][key]['grades'].keys() and str(col_percentage) != str(user['courses'][key]['grades'][id]['percentage']):
                     old_grade = user['courses'][key]['grades'][id]['percentage']
                     user['courses'][key]['grades'][id]['percentage'] = col_percentage
-                    if f"\n\n  {user['courses'][key]['name']}:" not in updated_grades:
-                        updated_grades += f"\n\n  {user['courses'][key]['name']}:"
-                    updated_grades += f"\n      - [{col_name}]({moodle+url_to_course}) / {old_grade} -> {col_percentage}"
+                    if course_name not in updated_grades:
+                        updated_grades += f"\n\n  [{course_name}]({moodle+url_to_course}):"
+                    updated_grades += f"\n      {clear_MD(col_name)} / {clear_MD(old_grade)} -> {clear_MD(col_percentage)}"
             except Exception as exc:
                 continue
     return [new_grades, updated_grades]
@@ -272,6 +266,8 @@ async def get_assignments_of_course(s, user, key, proxy):
     new_deadlines = ''
     upcoming_deadlines = ''
 
+    course_name = user['courses'][key]['name']
+
     url = 'https://moodle.astanait.edu.kz/mod/assign/view.php?id='
     url_to_course = f"/course/view.php?id={user['courses'][key]['id']}"
 
@@ -318,9 +314,9 @@ async def get_assignments_of_course(s, user, key, proxy):
                     if not assignment_sub and not black_list(assignment_name):
                         if not course_state1:
                             course_state1 = 1
-                            new_deadlines += f"\n\n  [{user['courses'][key]['name']}]({url_to_course}):"
-                        new_deadlines += f"\n      [{assignment_dict['name']}]({url}{assignment_dict['id']})"
+                            new_deadlines += f"\n\n  [{course_name}]({url_to_course}):"
                         due = assignment_dict['due'].replace(', ','\n      ')
+                        new_deadlines += f"\n      [{clear_MD(assignment_dict['name'])}]({url}{assignment_dict['id']})"
                         new_deadlines += f"\n      {due}"
                         new_deadlines += f"\n      Remaining: {diff_time}\n"
                 else:
@@ -336,9 +332,9 @@ async def get_assignments_of_course(s, user, key, proxy):
                                 if not assignment_sub:
                                     if not course_state2:
                                         course_state2 = 1
-                                        updated_deadlines += f"\n\n  [{user['courses'][key]['name']}]({url_to_course}):"
-                                    updated_deadlines += f"\n      [{user['courses'][key]['assignments'][x]['name']}]({url}{assignment_id})"
+                                        updated_deadlines += f"\n\n  [{course_name}]({url_to_course}):"
                                     due = user['courses'][key]['assignments'][x]['due'].replace(', ','\n      ')
+                                    updated_deadlines += f"\n      [{clear_MD(user['courses'][key]['assignments'][x]['name'])}]({url}{assignment_id})"
                                     updated_deadlines += f"\n      {due}"
                                     updated_deadlines += f"\n      Remaining: {diff_time}\n"
                             
@@ -347,9 +343,9 @@ async def get_assignments_of_course(s, user, key, proxy):
                                 if not assignment_sub:
                                     if not course_state3:
                                         course_state3 = 1
-                                        upcoming_deadlines += f"\n\n  [{user['courses'][key]['name']}]({url_to_course}):"
-                                    upcoming_deadlines += f"\n      [{user['courses'][key]['assignments'][x]['name']}]({url}{assignment_id})"
+                                        upcoming_deadlines += f"\n\n  [{course_name}]({url_to_course}):"
                                     due = user['courses'][key]['assignments'][x]['due'].replace(', ','\n      ')
+                                    upcoming_deadlines += f"\n      [{clear_MD(user['courses'][key]['assignments'][x]['name'])}]({url}{assignment_id})"
                                     upcoming_deadlines += f"\n      {due}"
                                     upcoming_deadlines += f"\n      Remaining: {diff_time}\n"
                                     user['courses'][key]['assignments'][x]['status'] = 1

@@ -8,13 +8,13 @@ import dotenv
 from arsenic import browsers, get_session, services
 from arsenic.errors import UnknownArsenicError
 from aiogram import Bot, Dispatcher, types
-from aiogram.utils import exceptions, executor
+from aiogram.utils import exceptions
 from webdriver_manager.chrome import ChromeDriverManager
 
 from functions.functions import (decrypt, get_cookies_data,
                                  set_arsenic_log_level)
 from functions.gpa import get_soup, login_and_get_gpa
-from functions.moodle_functions import (add_new_courses, add_new_courses_deadlines, auth_moodle,
+from functions.moodle_functions import (add_new_courses, add_new_courses, auth_moodle,
                                         clear_courses, get_assignments_of_course, get_courses, get_grades_of_course)
 from functions import aioredis
 from functions.logger import logger
@@ -28,7 +28,7 @@ port = os.getenv('PORT')
 login = os.getenv('LOGIN')
 passwd = os.getenv('PASSWD')
 
-bot = Bot(token=TOKEN, parse_mode=types.ParseMode.HTML)
+bot = Bot(token=TOKEN, parse_mode=types.ParseMode.MARKDOWN_V2)
 dp = Dispatcher(bot)
 
 
@@ -36,28 +36,24 @@ async def delete_user(chat_id):
     await aioredis.redis.delete(chat_id)
 
 
-async def send_msg(chat_id, text):
+async def send(chat_id, text):
     markup = types.InlineKeyboardMarkup()
     switch_button = types.InlineKeyboardButton(text='Delete', callback_data="delete")
     markup.add(switch_button)
     try:
-        bot.send_message(chat_id, text, reply_markup=markup, disable_notification=True)
+        await bot.send_message(chat_id, text, reply_markup=markup, disable_notification=True)
     except exceptions.BotBlocked:
         await delete_user(chat_id)
     except exceptions.ChatNotFound:
         await delete_user(chat_id)
     except exceptions.RetryAfter as e:
         await asyncio.sleep(e.timeout)
-        return await send_msg(chat_id, text)
+        return await send(chat_id, text)
     except exceptions.UserDeactivated:
         await delete_user(chat_id)
     except exceptions.TelegramAPIError:
+        print(text)
         logger.error(chat_id, exc_info=True)
-        await delete_user(chat_id)
-
-
-def send(chat_id, text):
-    executor.start(dp, send_msg(chat_id, text))
 
 
 async def get_cookies(user_id, BARCODE, PASSWD):
@@ -182,11 +178,11 @@ async def set_grades(user, session, courses_names, courses_ids, active_courses_i
         for item in new_grades:
             if len(item) < 20:
                 continue
-            send(user['user_id'], item)
+            await send(user['user_id'], item)
         for item in updated_grades:
             if len(item) < 20:
                 continue
-            send(user['user_id'], item)
+            await send(user['user_id'], item)
 
 
 async def set_deadlines(user, session, courses_names, courses_ids, active_courses_ids, proxy):
@@ -195,7 +191,7 @@ async def set_deadlines(user, session, courses_names, courses_ids, active_course
     upcoming_deadlines = ['Upcoming deadlines:']
     
     courses = clear_courses(user, courses_ids, active_courses_ids)
-    user = add_new_courses_deadlines(courses_names, courses_ids, courses, user)
+    add_new_courses(user, courses_names, courses_ids, courses)
     clear_courses(user, courses_ids, active_courses_ids)
 
     group = await asyncio.gather(*[get_assignments_of_course(session, user, key, proxy) for key in user['courses']])
@@ -225,15 +221,15 @@ async def set_deadlines(user, session, courses_names, courses_ids, active_course
         for item in updated_deadlines:
             if len(item) < 20:
                 continue
-            send(user['user_id'], item)
+            await send(user['user_id'], item)
         for item in new_deadlines:
             if len(item) < 20:
                 continue
-            send(user['user_id'], item)
+            await send(user['user_id'], item)
         for item in upcoming_deadlines:
             if len(item) < 20:
                 continue
-            send(user['user_id'], item)
+            await send(user['user_id'], item)
 
 
 async def check_updates(user):
