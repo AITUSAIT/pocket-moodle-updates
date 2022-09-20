@@ -26,7 +26,6 @@ th_number = int(os.getenv('THREAD_NUMBER'))
 
 
 async def run_check(user):
-    user_id = user['user_id']
     try:
         user['courses'] = json.loads(user['courses'])
     except:
@@ -36,16 +35,12 @@ async def run_check(user):
 
     if result == 0:
         res = 'Invalid Login'
-        # if not await aioredis.check_if_msg(user_id):
-        #     send(user_id, 'Invalid Login\nTry /register\_moodle to fix it')
     elif result == -1:
         res = 'Error'
     elif result == 1:
         res = 'Success'
     else:
         res = result
-        # if not await aioredis.check_if_msg(user_id):
-        #     send(user_id, result + '\nTry /register\_moodle to fix it')
 
     return res
 

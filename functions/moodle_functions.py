@@ -314,11 +314,11 @@ async def get_assignments_of_course(s, user, key, proxy):
                     if not assignment_sub and not black_list(assignment_name):
                         if not course_state1:
                             course_state1 = 1
-                            new_deadlines += f"\n\n  [{course_name}]({url_to_course}):"
+                            new_deadlines += f"\n\n  [{clear_MD(course_name)}]({url_to_course}):"
                         due = assignment_dict['due'].replace(', ','\n      ')
                         new_deadlines += f"\n      [{clear_MD(assignment_dict['name'])}]({url}{assignment_dict['id']})"
-                        new_deadlines += f"\n      {due}"
-                        new_deadlines += f"\n      Remaining: {diff_time}\n"
+                        new_deadlines += f"\n      {clear_MD(due)}"
+                        new_deadlines += f"\n      Remaining: {clear_MD(diff_time)}\n"
                 else:
                     if not black_list(assignment_name):
                         for x in user['courses'][key]['assignments']:
@@ -332,22 +332,22 @@ async def get_assignments_of_course(s, user, key, proxy):
                                 if not assignment_sub:
                                     if not course_state2:
                                         course_state2 = 1
-                                        updated_deadlines += f"\n\n  [{course_name}]({url_to_course}):"
+                                        updated_deadlines += f"\n\n  [{clear_MD(course_name)}]({url_to_course}):"
                                     due = user['courses'][key]['assignments'][x]['due'].replace(', ','\n      ')
                                     updated_deadlines += f"\n      [{clear_MD(user['courses'][key]['assignments'][x]['name'])}]({url}{assignment_id})"
-                                    updated_deadlines += f"\n      {due}"
-                                    updated_deadlines += f"\n      Remaining: {diff_time}\n"
+                                    updated_deadlines += f"\n      {clear_MD(due)}"
+                                    updated_deadlines += f"\n      Remaining: {clear_MD(diff_time)}\n"
                             
                             diff_time = get_diff_time(user['courses'][key]['assignments'][x]['due'])
                             if not user['courses'][key]['assignments'][x]['status'] and diff_time>timedelta(days=0) and diff_time<timedelta(days=3):
                                 if not assignment_sub:
                                     if not course_state3:
                                         course_state3 = 1
-                                        upcoming_deadlines += f"\n\n  [{course_name}]({url_to_course}):"
+                                        upcoming_deadlines += f"\n\n  [{clear_MD(course_name)}]({url_to_course}):"
                                     due = user['courses'][key]['assignments'][x]['due'].replace(', ','\n      ')
                                     upcoming_deadlines += f"\n      [{clear_MD(user['courses'][key]['assignments'][x]['name'])}]({url}{assignment_id})"
-                                    upcoming_deadlines += f"\n      {due}"
-                                    upcoming_deadlines += f"\n      Remaining: {diff_time}\n"
+                                    upcoming_deadlines += f"\n      {clear_MD(due)}"
+                                    upcoming_deadlines += f"\n      Remaining: {clear_MD(diff_time)}\n"
                                     user['courses'][key]['assignments'][x]['status'] = 1
             except Exception as exc:
                 continue

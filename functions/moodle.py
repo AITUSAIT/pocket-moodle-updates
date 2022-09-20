@@ -52,8 +52,7 @@ async def send(chat_id, text):
     except exceptions.UserDeactivated:
         await delete_user(chat_id)
     except exceptions.TelegramAPIError:
-        print(text)
-        logger.error(chat_id, exc_info=True)
+        logger.error(f"{chat_id}\n{text}\n", exc_info=True)
 
 
 async def get_cookies(user_id, BARCODE, PASSWD):
