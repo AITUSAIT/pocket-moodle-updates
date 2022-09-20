@@ -2,6 +2,16 @@ import logging
 import structlog
 
 
+def clear_MD(text):
+    text = str(text)
+    symbols = ['_', '-', '*', '~', '[', ']', '(', ')', '`', '.', '#']
+
+    for sym in symbols:
+        text = text.replace(sym, f"\{sym}")
+
+    return text
+    
+
 async def set_arsenic_log_level(level = logging.WARNING):
     logger = logging.getLogger('arsenic')
 

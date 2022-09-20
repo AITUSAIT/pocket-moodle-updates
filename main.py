@@ -10,7 +10,6 @@ from functions import aioredis
 from functions.logger import logger
 from functions.moodle import check_updates, send
 
-
 dotenv.load_dotenv()
 
 REDIS_HOST = os.getenv('REDIS_HOST')
@@ -37,16 +36,16 @@ async def run_check(user):
 
     if result == 0:
         res = 'Invalid Login'
-        if not await aioredis.check_if_msg(user_id):
-            send(user_id, 'Invalid Login\nTry /register\_moodle to fix it')
+        # if not await aioredis.check_if_msg(user_id):
+        #     send(user_id, 'Invalid Login\nTry /register\_moodle to fix it')
     elif result == -1:
         res = 'Error'
     elif result == 1:
         res = 'Success'
     else:
         res = result
-        if not await aioredis.check_if_msg(user_id):
-            send(user_id, result + '\nTry /register\_moodle to fix it')
+        # if not await aioredis.check_if_msg(user_id):
+        #     send(user_id, result + '\nTry /register\_moodle to fix it')
 
     return res
 
