@@ -136,7 +136,7 @@ async def get_grades_of_course(session, user, key):
             if _id not in user['courses'][key]['grades']:
                 if '%' in col_percentage:
                     if course_name not in new_grades:
-                        new_grades += f"\n\n  [{course_name}]({moodle+url_to_course}):"
+                        new_grades += f"\n\n  [{clear_MD(course_name)}]({moodle+url_to_course}):"
                     new_grades += f"\n      {clear_MD(col_name)} / {clear_MD(col_percentage)}"
                 user['courses'][key]['grades'][_id] = temp
             elif _id in user['courses'][key]['grades'] and str(col_percentage) != str(user['courses'][key]['grades'][_id]['percentage']):
@@ -155,14 +155,14 @@ async def get_grades_of_course(session, user, key):
                 if id not in user['courses'][key]['grades']:
                     if '%' in col_percentage:
                         if course_name not in new_grades:
-                            new_grades += f"\n\n  [{course_name}]({moodle+url_to_course}):"
+                            new_grades += f"\n\n  [{clear_MD(course_name)}]({moodle+url_to_course}):"
                         new_grades += f"\n      {clear_MD(col_name)} / {clear_MD(col_percentage)}"
                     user['courses'][key]['grades'][id] = temp
                 elif id in user['courses'][key]['grades'].keys() and str(col_percentage) != str(user['courses'][key]['grades'][id]['percentage']):
                     old_grade = user['courses'][key]['grades'][id]['percentage']
                     user['courses'][key]['grades'][id]['percentage'] = col_percentage
                     if course_name not in updated_grades:
-                        updated_grades += f"\n\n  [{course_name}]({moodle+url_to_course}):"
+                        updated_grades += f"\n\n  [{clear_MD(course_name)}]({moodle+url_to_course}):"
                     updated_grades += f"\n      {clear_MD(col_name)} / {clear_MD(old_grade)} -> {clear_MD(col_percentage)}"
             except Exception as exc:
                 continue
