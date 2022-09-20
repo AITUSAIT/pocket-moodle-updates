@@ -3,6 +3,7 @@ import json
 import os
 import time
 
+import aiohttp
 import dotenv
 
 from functions import aioredis
@@ -17,30 +18,36 @@ REDIS_DB = os.getenv('REDIS_DB')
 REDIS_USER = os.getenv('REDIS_USER')
 REDIS_PASSWD = os.getenv('REDIS_PASSWD')
 
+MAIN_HOST = os.getenv('MAIN_HOST')
+token = os.getenv('token')
+
 threads = int(os.getenv('THREADS'))
 th_number = int(os.getenv('THREAD_NUMBER'))
 
 
-async def run_check(user_id):
-    user = await aioredis.redis.hgetall(user_id)
+async def run_check(user):
+    user_id = user['user_id']
     try:
         user['courses'] = json.loads(user['courses'])
     except:
         ...
 
     result = await check_updates(user)
+
     if result == 0:
-        logger.info(f"{user_id} - {user['barcode']} - Invalid Login ")
+        res = 'Invalid Login'
         # if not await aioredis.check_if_msg(user_id):
-        #     await send(user_id, 'Invalid Login\nTry /register\_moodle to fix it')
+        #     send(user_id, 'Invalid Login\nTry /register\_moodle to fix it')
     elif result == -1:
-        logger.info(f"{user_id} - {user['barcode']} - Error")
+        res = 'Error'
     elif result == 1:
-        logger.info(f"{user_id} - {user['barcode']} - Success")
+        res = 'Success'
     else:
-        logger.info(f"{user_id} - {user['barcode']} - {result}")
+        res = result
         # if not await aioredis.check_if_msg(user_id):
-        #     await send(user_id, result + '\nTry /register\_moodle to fix it')
+        #     send(user_id, result + '\nTry /register\_moodle to fix it')
+
+    return res
 
 
 async def main():
@@ -52,17 +59,19 @@ async def main():
         REDIS_DB
     )
     while 1:
-        start_time = time.time()
-        keys : list = await aioredis.redis.keys()
-        keys.remove('news')
-
-        for i in range(0, len(keys)):
-            if (i+th_number) % threads == 0 or th_number == 0:
-                if await aioredis.is_registered_moodle(keys[i]):
-                    os.environ["ATT_STATE"] = "1"
-                    await run_check(keys[i])
-
-        logger.info(f"{(time.time() - start_time)} секунд\n")
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f'{MAIN_HOST}/api/get_user/?token={token}&format=json') as response:
+                data = await response.json()
+            if response.status == 200:
+                user = data['user']
+                os.environ["ATT_STATE"] = "1"
+                result = await run_check(user)
+                params = {
+                    'user_id': user['user_id'],
+                    'result': result,
+                }
+                async with session.post(f'{MAIN_HOST}/api/update_user/?token={token}&format=json', data=params) as response:
+                    logger.info(f"{user['user_id']} - {response.status}")
     await aioredis.close()
 
 
