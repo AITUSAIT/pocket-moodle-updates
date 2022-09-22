@@ -1,14 +1,13 @@
 import asyncio
 import json
 import os
-import time
 
 import aiohttp
 import dotenv
 
 from functions import aioredis
 from functions.logger import logger
-from functions.moodle import check_updates, send
+from functions.moodle import check_updates
 
 dotenv.load_dotenv()
 
@@ -20,9 +19,6 @@ REDIS_PASSWD = os.getenv('REDIS_PASSWD')
 
 MAIN_HOST = os.getenv('MAIN_HOST')
 token = os.getenv('token')
-
-threads = int(os.getenv('THREADS'))
-th_number = int(os.getenv('THREAD_NUMBER'))
 
 
 async def run_check(user):
