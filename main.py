@@ -55,7 +55,7 @@ async def main():
     )
     while 1:
         async with aiohttp.ClientSession() as session:
-            async with session.get(f'{MAIN_HOST}/api/get_user/?token={token}&format=json') as response:
+            async with session.get(f'{MAIN_HOST}/api/get_user?token={token}') as response:
                 data = await response.json()
             if response.status == 200:
                 user = data['user']
@@ -65,7 +65,7 @@ async def main():
                     'user_id': user['user_id'],
                     'result': result,
                 }
-                async with session.post(f'{MAIN_HOST}/api/update_user/?token={token}&format=json', data=params) as response:
+                async with session.post(f'{MAIN_HOST}/api/update_user?token={token}', data=params) as response:
                     logger.info(f"{user['user_id']} - {response.status}")
     await aioredis.close()
 
