@@ -117,7 +117,7 @@ async def get_grades_of_course(session, user, key):
             'Course total': '4',
         }
 
-        course_name = clear_MD(user['courses'][key]['name'])
+        course_name = user['courses'][key]['name']
 
         temp_rows = []
         for row in rows:
@@ -128,42 +128,42 @@ async def get_grades_of_course(session, user, key):
             else:
                 temp_rows.append(row)
         for row in temp_rows:
-            col_name = clear_MD(str(row.find('th', {'class': 'column-itemname'}).contents[0].text))
+            col_name = str(row.find('th', {'class': 'column-itemname'}).contents[0].text)
             try: _id = list_ids[col_name]
             except: continue
-            col_percentage = clear_MD(str(row.find('td', {'class': 'column-percentage'}).text))
+            col_percentage = str(row.find('td', {'class': 'column-percentage'}).text)
             temp = {'name': col_name, 'percentage': col_percentage, 'id': _id}
             if _id not in user['courses'][key]['grades']:
                 if '%' in col_percentage:
                     if course_name not in new_grades:
-                        new_grades += f"\n\n  [{course_name}]({moodle+url_to_course}):"
-                    new_grades += f"\n      {col_name} / {col_percentage}"
+                        new_grades += f"\n\n  [{clear_MD(course_name)}]({moodle+url_to_course}):"
+                    new_grades += f"\n      {clear_MD(col_name)} / {clear_MD(col_percentage)}"
                 user['courses'][key]['grades'][_id] = temp
-            elif _id in user['courses'][key]['grades'] and col_percentage != str(user['courses'][key]['grades'][_id]['percentage']):
-                old_grade = clear_MD(user['courses'][key]['grades'][_id]['percentage'])
+            elif _id in user['courses'][key]['grades'] and str(col_percentage) != str(user['courses'][key]['grades'][_id]['percentage']):
+                old_grade = user['courses'][key]['grades'][_id]['percentage']
                 user['courses'][key]['grades'][_id]['percentage'] = col_percentage
                 if course_name not in updated_grades:
-                    updated_grades += f"\n\n  [{course_name}]({moodle+url_to_course}):"
-                updated_grades += f"\n      {col_name} / {old_grade} \-\> {col_percentage}"
+                    updated_grades += f"\n\n  [{clear_MD(course_name)}]({moodle+url_to_course}):"
+                updated_grades += f"\n      {clear_MD(col_name)} / {clear_MD(old_grade)} \-\> {clear_MD(col_percentage)}"
 
         for row in rows:
             try:
                 id = str(row.find('a').get('href')).split('?id=')[1].split('&')[0]
-                col_name = clear_MD(str(row.find('th', {'class': 'column-itemname'}).contents[0].text))
-                col_percentage = clear_MD(str(row.find('td', {'class': 'column-percentage'}).text))
+                col_name = str(row.find('th', {'class': 'column-itemname'}).contents[0].text)
+                col_percentage = str(row.find('td', {'class': 'column-percentage'}).text)
                 temp = {'name': col_name, 'percentage': col_percentage, 'id': id}
                 if id not in user['courses'][key]['grades']:
                     if '%' in col_percentage:
                         if course_name not in new_grades:
-                            new_grades += f"\n\n  [{course_name}]({moodle+url_to_course}):"
-                        new_grades += f"\n      {col_name} / {col_percentage}"
+                            new_grades += f"\n\n  [{clear_MD(course_name)}]({moodle+url_to_course}):"
+                        new_grades += f"\n      {clear_MD(col_name)} / {clear_MD(col_percentage)}"
                     user['courses'][key]['grades'][id] = temp
                 elif id in user['courses'][key]['grades'].keys() and str(col_percentage) != str(user['courses'][key]['grades'][id]['percentage']):
-                    old_grade = clear_MD(user['courses'][key]['grades'][id]['percentage'])
+                    old_grade = user['courses'][key]['grades'][id]['percentage']
                     user['courses'][key]['grades'][id]['percentage'] = col_percentage
                     if course_name not in updated_grades:
-                        updated_grades += f"\n\n  [{course_name}]({moodle+url_to_course}):"
-                    updated_grades += f"\n      {col_name} / {old_grade} \-\> {col_percentage}"
+                        updated_grades += f"\n\n  [{clear_MD(course_name)}]({moodle+url_to_course}):"
+                    updated_grades += f"\n      {clear_MD(col_name)} / {clear_MD(old_grade)} \-\> {clear_MD(col_percentage)}"
             except Exception as exc:
                 continue
     return [new_grades, updated_grades]
