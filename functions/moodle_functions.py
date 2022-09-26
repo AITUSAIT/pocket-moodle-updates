@@ -143,7 +143,7 @@ async def get_grades_of_course(session, user, key):
                 old_grade = user['courses'][key]['grades'][_id]['percentage']
                 user['courses'][key]['grades'][_id]['percentage'] = col_percentage
                 if course_name not in updated_grades:
-                    updated_grades += f"\n\n  [{clear_MD(course_name)}]({moodle+url_to_course}):"
+                    updated_grades += f"\n\n  [{course_name}]({moodle+url_to_course}):"
                 updated_grades += f"\n      {clear_MD(col_name)} / {clear_MD(old_grade)} \-\> {clear_MD(col_percentage)}"
 
         for row in rows:
