@@ -157,7 +157,7 @@ async def set_grades(user, session, courses_names, courses_ids, active_courses_i
 
     group = await asyncio.gather(*[get_grades_of_course(session, user, key) for key in user['courses']])
     
-    if user['grades_sub']:
+    if int(user['grades_sub']):
         index_new = 0
         index_updated = 0
         for item in group:
@@ -195,7 +195,7 @@ async def set_deadlines(user, session, courses_names, courses_ids, active_course
 
     group = await asyncio.gather(*[get_assignments_of_course(session, user, key, proxy) for key in user['courses']])
     
-    if user['deadlines_sub']:
+    if int(user['deadlines_sub']):
         index_updated = 0
         index_new = 0
         index_upcoming = 0
