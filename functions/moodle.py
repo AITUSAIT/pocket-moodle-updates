@@ -173,15 +173,15 @@ async def set_grades(user, session, courses_names, courses_ids, active_courses_i
                 index_updated += 1
                 updated_grades.append(item[1])
 
-    if not int(user['ignore']) and await aioredis.is_active_sub(user['user_id']):
-        for item in new_grades:
-            if len(item) < 20:
-                continue
-            await send(user['user_id'], item)
-        for item in updated_grades:
-            if len(item) < 20:
-                continue
-            await send(user['user_id'], item)
+        if not int(user['ignore']) and await aioredis.is_active_sub(user['user_id']):
+            for item in new_grades:
+                if len(item) < 20:
+                    continue
+                await send(user['user_id'], item)
+            for item in updated_grades:
+                if len(item) < 20:
+                    continue
+                await send(user['user_id'], item)
 
 
 async def set_deadlines(user, session, courses_names, courses_ids, active_courses_ids, proxy):
@@ -216,19 +216,19 @@ async def set_deadlines(user, session, courses_names, courses_ids, active_course
                 index_upcoming += 1
                 upcoming_deadlines.append(item[2])
     
-    if not int(user['ignore']) and await aioredis.is_active_sub(user['user_id']):
-        for item in updated_deadlines:
-            if len(item) < 20:
-                continue
-            await send(user['user_id'], item)
-        for item in new_deadlines:
-            if len(item) < 20:
-                continue
-            await send(user['user_id'], item)
-        for item in upcoming_deadlines:
-            if len(item) < 20:
-                continue
-            await send(user['user_id'], item)
+        if not int(user['ignore']) and await aioredis.is_active_sub(user['user_id']):
+            for item in updated_deadlines:
+                if len(item) < 20:
+                    continue
+                await send(user['user_id'], item)
+            for item in new_deadlines:
+                if len(item) < 20:
+                    continue
+                await send(user['user_id'], item)
+            for item in upcoming_deadlines:
+                if len(item) < 20:
+                    continue
+                await send(user['user_id'], item)
 
 
 async def check_updates(user):
@@ -254,6 +254,10 @@ async def check_updates(user):
 
                 await set_grades(user, session, courses_names, courses_ids, active_courses_ids)
                 
+                if int(user['ignore']):
+                    await asyncio.sleep(30)
+
+
                 proxy = f'http://{login}:{passwd}@{host}:{port}'
                 await set_deadlines(user, session, courses_names, courses_ids, active_courses_ids, proxy)
 
