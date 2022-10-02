@@ -54,18 +54,17 @@ async def main():
     while 1:
         async with aiohttp.ClientSession() as session:
             async with session.get(f'{MAIN_HOST}/api/get_user?token={token}') as response:
-                ...
-            if response.status == 200:
-                data = await response.json()
-                user = data['user']
-                os.environ["ATT_STATE"] = "1"
-                result = await run_check(user)
-                params = {
-                    'user_id': user['user_id'],
-                    'result': result,
-                }
-                async with session.post(f'{MAIN_HOST}/api/update_user?token={token}', data=params) as response:
-                    logger.info(f"{user['user_id']} - {response.status}")
+                if response.status == 200:
+                    data = await response.json()
+                    user = data['user']
+                    os.environ["ATT_STATE"] = "1"
+                    result = await run_check(user)
+                    params = {
+                        'user_id': user['user_id'],
+                        'result': result,
+                    }
+                    async with session.post(f'{MAIN_HOST}/api/update_user?token={token}', data=params) as response:
+                        logger.info(f"{user['user_id']} - {response.status}")
     await aioredis.close()
 
 
