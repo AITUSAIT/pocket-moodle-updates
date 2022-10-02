@@ -7,7 +7,7 @@ import dotenv
 
 from functions import aioredis
 from functions.logger import logger
-from functions.moodle import check_updates
+from functions.moodle import check_updates, send
 
 dotenv.load_dotenv()
 
@@ -31,6 +31,8 @@ async def run_check(user):
 
     if result == 0:
         res = 'Invalid Login'
+        if not await aioredis.check_if_msg(user['user_id']):
+            await send(user['user_id'],'Invalid login or password')
     elif result == -1:
         res = 'Error'
     elif result == 1:

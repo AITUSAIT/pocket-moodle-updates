@@ -114,6 +114,8 @@ async def get_cookies(user_id, BARCODE, PASSWD):
             try:
                 error = await session.get_element('div[id=passwordError]')
                 if await error.is_displayed():
+                    if not await aioredis.check_if_msg(user_id):
+                        await send(user_id, 'Invalid login or password')
                     return {}, False, 'Invalid Login (passwd)'
             except:
                 pass

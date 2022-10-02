@@ -6,8 +6,9 @@ from bs4 import BeautifulSoup
 from functions.functions import clear_MD
 
 
-async def auth_moodle(data, s):
-    login, password = data.values()
+async def auth_moodle(user, s):
+    login = user['barcode']
+    password = user['passwd']
     async with s.get("/login/index.php", timeout=15) as r_1:
         text = await r_1.text()
         pattern_auth = '<input type="hidden" name="logintoken" value="\w{32}">'
