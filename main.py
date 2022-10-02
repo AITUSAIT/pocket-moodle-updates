@@ -54,8 +54,9 @@ async def main():
     while 1:
         async with aiohttp.ClientSession() as session:
             async with session.get(f'{MAIN_HOST}/api/get_user?token={token}') as response:
-                data = await response.json()
+                ...
             if response.status == 200:
+                data = await response.json()
                 user = data['user']
                 os.environ["ATT_STATE"] = "1"
                 result = await run_check(user)
