@@ -1,4 +1,5 @@
 import asyncio
+from curses.ascii import isdigit
 import json
 import os
 from asyncio import sleep
@@ -248,7 +249,10 @@ async def check_updates(user):
         get_cookies_state = await check_cookies(cookies)
 
     if get_cookies_state:
-        if int(user['barcode']) >= 210000:
+        if str(user['barcode']).isdigit():
+            if int(user['barcode']) >= 210000:
+                cookies, login_state, msg = await get_cookies(user['user_id'], user['barcode'], user['passwd'])
+        else:    
             cookies, login_state, msg = await get_cookies(user['user_id'], user['barcode'], user['passwd'])
         if msg != '':
             return msg
