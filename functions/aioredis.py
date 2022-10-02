@@ -83,7 +83,7 @@ async def check_if_msg(user_id):
     message = int(await redis.hget(user_id, 'message'))
     await redis.hset(user_id, 'message', 1)
     return message
-
+    
 
 async def close():
     await redis.close()

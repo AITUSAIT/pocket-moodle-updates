@@ -1,3 +1,4 @@
+import aiohttp
 from datetime import datetime, timedelta
 import os
 import re
@@ -23,7 +24,18 @@ async def auth_moodle(user, s):
             return 0
         else:
             return 1
-            
+
+
+async def check_cookies(cookies):
+    async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', cookies=cookies) as session:
+        async with session.get("/login/index.php", timeout=15) as request:
+            rText = await request.read()
+            soup = BeautifulSoup(rText.decode('utf-8'), 'html.parser')
+            if soup.find('input', {'id': 'username'}):
+                return True
+            else:
+                return False
+
 
 async def get_courses(s):
     async with s.get('/', timeout=15) as request:

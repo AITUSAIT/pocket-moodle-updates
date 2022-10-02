@@ -14,7 +14,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from functions.functions import (decrypt, get_cookies_data,
                                  set_arsenic_log_level)
 from functions.gpa import get_soup, login_and_get_gpa
-from functions.moodle_functions import (add_new_courses, add_new_courses, auth_moodle,
+from functions.moodle_functions import (add_new_courses, add_new_courses, auth_moodle, check_cookies,
                                         clear_courses, get_assignments_of_course, get_courses, get_grades_of_course)
 from functions import aioredis
 from functions.logger import logger
@@ -239,12 +239,21 @@ async def check_updates(user):
     user['passwd'] = decrypt(user['passwd'], user['barcode'])
 
     login_state = False
-    cookies = {}
+    cookies = json.loads(user.get('cookies', '{}'))
     msg = ''
-    if int(user['barcode']) >= 210000:
-        cookies, login_state, msg = await get_cookies(user['user_id'], user['barcode'], user['passwd'])
-    if msg != '':
-        return msg
+
+    if cookies == {}:
+        get_cookies_state = True
+    else:
+        get_cookies_state = await check_cookies(cookies)
+
+    if get_cookies_state:
+        if int(user['barcode']) >= 210000:
+            cookies, login_state, msg = await get_cookies(user['user_id'], user['barcode'], user['passwd'])
+        if msg != '':
+            return msg
+    else:
+        login_state = True
 
     try:
         connector = aiohttp.TCPConnector(limit_per_host=100)
@@ -266,6 +275,7 @@ async def check_updates(user):
                 await set_deadlines(user, session, courses_names, courses_ids, active_courses_ids, proxy)
 
                 await aioredis.redis.hset(user['user_id'], 'courses', json.dumps(user['courses']))
+                await aioredis.redis.hset(user['user_id'], 'cookies', json.dumps(cookies))
                 await aioredis.redis.hset(user['user_id'], 'att_statistic', json.dumps(user['att_statistic']))
                 await aioredis.redis.hset(user['user_id'], 'ignore', 0)
                 return 1
