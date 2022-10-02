@@ -263,8 +263,9 @@ async def check_updates(user):
         connector = aiohttp.TCPConnector(limit_per_host=100)
         session_timeout = aiohttp.ClientTimeout(total=None, sock_connect=30, sock_read=30)
         async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', connector=connector, cookies=cookies, timeout=session_timeout) as session:
-            if int(user['barcode']) < 210000:
-                login_state = await auth_moodle(user, session)
+            if str(user['barcode']).isdigit():
+                if int(user['barcode']) < 210000:
+                    login_state = await auth_moodle(user, session)
             if login_state:
                 
                 courses_ids, courses_names, active_courses_ids = await get_courses(session)
