@@ -284,7 +284,7 @@ async def get_assignments_of_course(s, user, key, proxy):
     url = 'https://moodle.astanait.edu.kz/mod/assign/view.php?id='
     url_to_course = f"/course/view.php?id={user['courses'][key]['id']}"
 
-    if user['courses'][key]['active'] == False and user['courses'][key].get('assignments', None):
+    if user['courses'][key]['active'] == False:
         return [updated_deadlines, new_deadlines, upcoming_deadlines]
 
     assignments_ids = []

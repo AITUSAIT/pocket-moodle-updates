@@ -272,10 +272,6 @@ async def check_updates(user):
 
                 await set_grades(user, session, courses_names, courses_ids, active_courses_ids)
                 
-                if int(user['ignore']):
-                    await asyncio.sleep(30)
-
-
                 proxy = f'http://{login}:{passwd}@{host}:{port}'
                 await set_deadlines(user, session, courses_names, courses_ids, active_courses_ids, proxy)
 
