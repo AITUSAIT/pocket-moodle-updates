@@ -67,7 +67,7 @@ async def get_cookies(user_id, BARCODE, PASSWD):
                                         "--disable-dev-shm-usage", "--disable-crash-reporter",
                                         "--log-level=3", "--disable-extensions",
                                         "--disable-in-process-stack-traces", "--disable-logging",
-                                        "--output=/dev/null", "--remote-debugging-port=9222"]}}
+                                        "--output=/dev/null"]}}
     async with get_session(service, browser) as session:
         url = "https://moodle.astanait.edu.kz/auth/oidc/"
         await session.get(url)
