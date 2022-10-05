@@ -59,7 +59,7 @@ async def send(chat_id, text):
 async def get_cookies(user_id, BARCODE, PASSWD):
     await set_arsenic_log_level()
     import os
-    service = services.Chromedriver()
+    service = services.Chromedriver(binary='/usr/bin/chromedriver')
     service.log_file = os.devnull
     browser = browsers.Chrome()
     browser.capabilities = {
