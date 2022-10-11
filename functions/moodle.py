@@ -278,6 +278,7 @@ async def check_updates(user):
                 await aioredis.redis.hset(user['user_id'], 'cookies', json.dumps(cookies))
                 await aioredis.redis.hset(user['user_id'], 'att_statistic', json.dumps(user['att_statistic']))
                 await aioredis.redis.hset(user['user_id'], 'ignore', 0)
+                await aioredis.redis.hset(user['user_id'], 'new_user', 0)
                 return 1
             else:
                 return 0
