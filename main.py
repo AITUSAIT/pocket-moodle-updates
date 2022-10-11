@@ -32,7 +32,7 @@ async def run_check(user):
     if result == 0:
         res = 'Invalid Login'
         if not await aioredis.check_if_msg(user['user_id']):
-            await send(user['user_id'],'Invalid login or password')
+            await send(user['user_id'],'Invalid login or password\n/register_moodle to fix')
     elif result == -1:
         res = 'Error'
     elif result == 1:
