@@ -99,14 +99,11 @@ class Moodle():
             async with session.get("/user/managetoken.php", timeout=15) as request:
                 rText = await request.read()
                 soup = BeautifulSoup(rText.decode('utf-8'), 'html.parser')
-                div = soup.find('table', {'class': 'generaltable'})
-                trs = div.find_all('tr')
-                for tr in trs:
-                    tds_0 = tr.find_all('td', {'class': 'cell c0'})
-                    tds_1 = tr.find_all('td', {'class': 'cell c1'})
-                    for i in range(0, len(tds_0)):
-                        if tds_1[i].text == 'Moodle mobile web service':
-                            self.user.token = tds_0[i].text
+                tds_0 = soup.find_all('td', {'class': 'cell c0'})
+                tds_1 = soup.find_all('td', {'class': 'cell c1'})
+                for i in range(0, len(tds_0)):
+                    if tds_1[i].text == 'Moodle mobile web service':
+                        self.user.token = tds_0[i].text
 
 
     async def make_request(self, function, token=None, params=None, end_point='webservice/rest/server.php/'):
