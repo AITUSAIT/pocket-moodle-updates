@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime, timedelta
 import logging
 import time
 import structlog
@@ -12,7 +13,25 @@ def clear_MD(text):
         text = text.replace(sym, f"\{sym}")
 
     return text
+
+
+def replace_grade_name(name: str):
+    strings = ['Включая незаполненные оценки.', '(not to edit)', 'Include empty grades.']
+    for string in strings:
+        name = name.replace(string, '')
+    return name
+
+
+def get_diff_time(time_str):
+    due = datetime.strptime(time_str, '%A, %d %B %Y, %I:%M %p')
+    now = datetime.now()
+    diff = due-now
+    return chop_microseconds(diff)
     
+
+def chop_microseconds(delta):
+    return delta - timedelta(microseconds=delta.microseconds)
+
 
 def timeit(func):
     async def process(func, *args, **params):

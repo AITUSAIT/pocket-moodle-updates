@@ -50,7 +50,7 @@ async def send(chat_id, text):
         logger.error(f"{chat_id}\n{text}\n", exc_info=True)
 
 
-@timeit
+
 async def get_cookies(user_id, BARCODE, PASSWD):
     await set_arsenic_log_level()
     import os

@@ -14,7 +14,9 @@ async def start_redis(user, passwd, host, port, db):
 
 async def set_key(key, key2, value):
     global redis
-    await redis.hset(key, key2, json.dumps(value))
+    if value.__class__ is dict:
+        value = json.dumps(value)
+    await redis.hset(key, key2, value)
 
 
 async def get_key(dict_key, key):
@@ -40,20 +42,27 @@ async def get_dict(key):
 async def get_user(user_id):
     data = await get_dict(user_id)
     user = type('', (), {})()
+
     user.user_id = data['user_id']
     user.id = None
+
     user.barcode = data.get('barcode', None)
+    user.passwd = data.get('passwd', None)
+
     user.cookies = json.loads(data.get('cookies', '{}'))
     user.token = data.get('token', None)
     user.token_att = data.get('token_att', None)
-    user.passwd = data.get('passwd', None)
+
     user.courses = json.loads(data.get('courses', '{}'))
     user.gpa = json.loads(data.get('gpa', '{}'))
     user.att_statistic = json.loads(data.get('att_statistic', '{}'))
+
     user.is_sub_grades = bool(int(data.get('grades_sub', 0)))
     user.is_sub_deadlines = bool(int(data.get('deadlines_sub', 0)))
     user.is_registered_moodle = await is_registered_moodle(user_id)
     user.is_active_sub = await is_active_sub(user_id)
+
+    user.is_ignore = bool(int(data.get('ignore', 0)))
 
     if user.is_registered_moodle:
         user.passwd = decrypt(user.passwd, user.barcode)

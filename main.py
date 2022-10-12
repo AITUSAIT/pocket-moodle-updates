@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 
 import aiohttp
@@ -7,7 +6,7 @@ import dotenv
 
 from functions import aioredis
 from functions.logger import logger
-from functions.moodle_old import check_updates, send
+from functions.moodle import check_updates, send
 
 dotenv.load_dotenv()
 
@@ -22,12 +21,7 @@ token = os.getenv('token')
 
 
 async def run_check(user):
-    try:
-        user['courses'] = json.loads(user['courses'])
-    except:
-        ...
-
-    result = await check_updates(user)
+    result = await check_updates(user['user_id'])
 
     if result == 0:
         res = 'Invalid Login'
