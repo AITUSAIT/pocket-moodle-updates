@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 
 import aiohttp
@@ -22,12 +21,7 @@ token = os.getenv('token')
 
 
 async def run_check(user):
-    try:
-        user['courses'] = json.loads(user['courses'])
-    except:
-        ...
-
-    result = await check_updates(user)
+    result = await check_updates(user['user_id'])
 
     if result == 0:
         res = 'Invalid Login'

@@ -1,13 +1,9 @@
 import json
-import logging
 from asyncio import sleep
-import traceback
 
-import structlog
 from bs4 import BeautifulSoup
 
 from functions import aioredis
-from functions.logger import logger
 
 
 async def get_cookies_data(session):
@@ -16,16 +12,6 @@ async def get_cookies_data(session):
     for cookie in session_cookies:
         cookies[cookie['name']] = cookie['value']
     return cookies
-
-
-async def set_arsenic_log_level(level=logging.WARNING):
-    logger = logging.getLogger('arsenic')
-
-    def logger_factory():
-        return logger
-
-    structlog.configure(logger_factory=logger_factory)
-    logger.setLevel(level)
 
 
 async def get_soup(session):

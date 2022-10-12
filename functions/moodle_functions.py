@@ -26,17 +26,6 @@ async def auth_moodle(user, s):
             return 1
 
 
-async def check_cookies(cookies):
-    async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', cookies=cookies) as session:
-        async with session.get("/login/index.php", timeout=15) as request:
-            rText = await request.read()
-            soup = BeautifulSoup(rText.decode('utf-8'), 'html.parser')
-            if soup.find('input', {'id': 'username'}):
-                return True
-            else:
-                return False
-
-
 async def get_courses(s):
     async with s.get('/', timeout=15) as request:
         text = await request.read()
@@ -92,15 +81,14 @@ def clear_courses(user, courses_ids, active_courses_ids):
 
 def add_new_courses(user, courses_names, courses_ids, courses):
     for i in range(0, len(courses_names)):
-        course = {
+        if courses_ids[i] not in courses:
+            user['courses'][courses_ids[i]] = {
             'id': courses_ids[i],
             'name': courses_names[i],
             'active': True,
             'grades': {},
             'assignments': {},
         }
-        if courses_ids[i] not in courses:
-            user['courses'][courses_ids[i]] = course
 
 
 async def get_grades_of_course(session, user, key):
@@ -192,7 +180,7 @@ def black_list(assignment_name):
     return skip
 
 
-async def get_att_stat(s, data, i, att_id):
+async def get_att_stat(s, data, att_id):
     href = f'/mod/attendance/view.php?mode=2&sesscourses=all&id={att_id}&view=5'
     async with s.get(href, timeout=15) as request:
         text = await request.text()
@@ -237,13 +225,15 @@ async def get_assignment_due(assignment, s):
         return id, due, state
 
 
-async def get_attendance(soup, s, data, key):
-    for item in soup.find_all('a', {'class': 'aalink'}):
+async def get_attendance(self, soup, data, key):
+    async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', cookies=self.user.cookies) as session:
+        li = soup.find('li', {'class': 'activity attendance modtype_attendance  '})
+        item = li.find('a', {'class': 'aalink'})
         if 'attendance' in item.get('href'):
             att_id = item.get('href').replace('https://moodle.astanait.edu.kz/mod/attendance/view.php?id=', '')
             if os.getenv('ATT_STATE') == "1":
                 os.environ["ATT_STATE"] = "0"
-                await get_att_stat(s, data, key, att_id)
+                await get_att_stat(s, data, att_id)
 
             href = (item.get('href')+'&view=5').replace('https://moodle.astanait.edu.kz', '')
             async with s.get(href, timeout=15) as request:
@@ -257,7 +247,6 @@ async def get_attendance(soup, s, data, key):
                 for j in range(0, len(c0_arr)):
                     text = str(c0_arr[j].getText().replace(':', ''))
                     data['courses'][key]['attendance'][text] = c1_arr[j].getText()
-                break
 
 
 def chop_microseconds(delta):
@@ -280,8 +269,9 @@ async def get_assignments_of_course(s, user, key, proxy):
     upcoming_deadlines = ''
 
     course_name = clear_MD(user['courses'][key]['name'])
+    course_name = clear_MD(user['courses'][key]['name'])
 
-    url = 'https://moodle.astanait.edu.kz/mod/assign/view.php?id='
+    url_assign = 'https://moodle.astanait.edu.kz/mod/assign/view.php?id='
     url_to_course = f"/course/view.php?id={user['courses'][key]['id']}"
 
     if user['courses'][key]['active'] == False:
@@ -329,7 +319,7 @@ async def get_assignments_of_course(s, user, key, proxy):
                             course_state1 = 1
                             new_deadlines += f"\n\n  [{course_name}]({url_to_course}):"
                         due = assignment_dict['due'].replace(', ','\n      ')
-                        new_deadlines += f"\n      [{clear_MD(assignment_dict['name'])}]({url}{assignment_dict['id']})"
+                        new_deadlines += f"\n      [{clear_MD(assignment_dict['name'])}]({url_assign}{assignment_dict['id']})"
                         new_deadlines += f"\n      {clear_MD(due)}"
                         new_deadlines += f"\n      Remaining: {clear_MD(diff_time)}\n"
                 else:
@@ -346,7 +336,7 @@ async def get_assignments_of_course(s, user, key, proxy):
                                     course_state2 = 1
                                     updated_deadlines += f"\n\n  [{course_name}]({url_to_course}):"
                                 due = user['courses'][key]['assignments'][x]['due'].replace(', ','\n      ')
-                                updated_deadlines += f"\n      [{clear_MD(user['courses'][key]['assignments'][x]['name'])}]({url}{assignment_id})"
+                                updated_deadlines += f"\n      [{clear_MD(user['courses'][key]['assignments'][x]['name'])}]({url_assign}{assignment_id})"
                                 updated_deadlines += f"\n      {clear_MD(due)}"
                                 updated_deadlines += f"\n      Remaining: {clear_MD(diff_time)}\n"
                         
@@ -357,7 +347,7 @@ async def get_assignments_of_course(s, user, key, proxy):
                                     course_state3 = 1
                                     upcoming_deadlines += f"\n\n  [{course_name}]({url_to_course}):"
                                 due = user['courses'][key]['assignments'][x]['due'].replace(', ','\n      ')
-                                upcoming_deadlines += f"\n      [{clear_MD(user['courses'][key]['assignments'][x]['name'])}]({url}{assignment_id})"
+                                upcoming_deadlines += f"\n      [{clear_MD(user['courses'][key]['assignments'][x]['name'])}]({url_assign}{assignment_id})"
                                 upcoming_deadlines += f"\n      {clear_MD(due)}"
                                 upcoming_deadlines += f"\n      Remaining: {clear_MD(diff_time)}\n"
                                 user['courses'][key]['assignments'][x]['status'] = 1
