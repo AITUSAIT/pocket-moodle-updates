@@ -51,7 +51,7 @@ class Moodle():
                 if int(self.user.barcode) >= 210000:
                     self.user.cookies, self.user.login_status, self.user.msg = await get_cookies(self.user.user_id, self.user.barcode, self.user.passwd)
                 elif int(self.user.barcode) < 210000:
-                    self.user.cookies, self.user.login_status = await self.auth_moodle(self)
+                    self.user.cookies, self.user.login_status = await self.auth_moodle()
                     if self.user.login_status:
                         self.user.msg = ''
                     else:
