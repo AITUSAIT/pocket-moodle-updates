@@ -26,17 +26,6 @@ async def auth_moodle(user, s):
             return 1
 
 
-async def check_cookies(cookies):
-    async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', cookies=cookies) as session:
-        async with session.get("/login/index.php", timeout=15) as request:
-            rText = await request.read()
-            soup = BeautifulSoup(rText.decode('utf-8'), 'html.parser')
-            if soup.find('input', {'id': 'username'}):
-                return True
-            else:
-                return False
-
-
 async def get_courses(s):
     async with s.get('/', timeout=15) as request:
         text = await request.read()
@@ -92,15 +81,14 @@ def clear_courses(user, courses_ids, active_courses_ids):
 
 def add_new_courses(user, courses_names, courses_ids, courses):
     for i in range(0, len(courses_names)):
-        course = {
+        if courses_ids[i] not in courses:
+            user['courses'][courses_ids[i]] = {
             'id': courses_ids[i],
             'name': courses_names[i],
             'active': True,
             'grades': {},
             'assignments': {},
         }
-        if courses_ids[i] not in courses:
-            user['courses'][courses_ids[i]] = course
 
 
 async def get_grades_of_course(session, user, key):

@@ -1,4 +1,6 @@
+import asyncio
 import logging
+import time
 import structlog
 
 
@@ -11,6 +13,26 @@ def clear_MD(text):
 
     return text
     
+
+def timeit(func):
+    async def process(func, *args, **params):
+        if asyncio.iscoroutinefunction(func):
+            return await func(*args, **params)
+        else:
+            return func(*args, **params)
+
+    async def helper(*args, **params):
+        start = time.time()
+        result = await process(func, *args, **params)
+
+        # Test normal function route...
+        # result = await process(lambda *a, **p: print(*a, **p), *args, **params)
+
+        print('>>>', func.__name__, time.time() - start, '\n')
+        return result
+
+    return helper
+
 
 async def set_arsenic_log_level(level = logging.WARNING):
     logger = logging.getLogger('arsenic')

@@ -7,7 +7,7 @@ import dotenv
 
 from functions import aioredis
 from functions.logger import logger
-from functions.moodle import check_updates, send
+from functions.moodle_old import check_updates, send
 
 dotenv.load_dotenv()
 

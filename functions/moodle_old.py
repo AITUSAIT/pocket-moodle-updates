@@ -33,10 +33,6 @@ bot = Bot(token=TOKEN, parse_mode=types.ParseMode.MARKDOWN_V2)
 dp = Dispatcher(bot)
 
 
-async def delete_user(chat_id):
-    await aioredis.redis.delete(chat_id)
-
-
 async def send(chat_id, text):
     markup = types.InlineKeyboardMarkup()
     switch_button = types.InlineKeyboardButton(text='Delete', callback_data="delete")
@@ -44,14 +40,14 @@ async def send(chat_id, text):
     try:
         await bot.send_message(chat_id, text, reply_markup=markup, disable_notification=True)
     except exceptions.BotBlocked:
-        await delete_user(chat_id)
+        ...
     except exceptions.ChatNotFound:
-        await delete_user(chat_id)
+        ...
     except exceptions.RetryAfter as e:
         await asyncio.sleep(e.timeout)
         return await send(chat_id, text)
     except exceptions.UserDeactivated:
-        await delete_user(chat_id)
+        ...
     except exceptions.TelegramAPIError:
         logger.error(f"{chat_id}\n{text}\n", exc_info=True)
 
