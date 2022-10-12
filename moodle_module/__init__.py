@@ -168,6 +168,8 @@ class Moodle():
         }
 
         for course_grades in courses_grades:
+            if 'tables' not in course_grades:
+                continue
             course_grades = course_grades['tables'][0]
             course = self.user.courses[str(course_grades['courseid'])]
             url_to_course = f"{moodle}/grade/report/user/index.php?id={course['id']}"
