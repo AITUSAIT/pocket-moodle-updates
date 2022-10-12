@@ -351,7 +351,7 @@ async def get_assignments_of_course(s, user, key, proxy):
                                 updated_deadlines += f"\n      Remaining: {clear_MD(diff_time)}\n"
                         
                         diff_time = get_diff_time(user['courses'][key]['assignments'][x]['due'])
-                        if not user['courses'][key]['assignments'][x]['status'] and diff_time>timedelta(days=0) and diff_time<timedelta(days=3):
+                        if user['courses'][key]['assignments'][x]['id'] == assignment_id and not user['courses'][key]['assignments'][x]['status'] and diff_time>timedelta(days=0) and diff_time<timedelta(days=3):
                             if not assignment_sub:
                                 if not course_state3:
                                     course_state3 = 1
