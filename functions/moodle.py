@@ -1,6 +1,7 @@
 import asyncio
 import os
 
+from http.cookies import SimpleCookie
 from aiogram import Bot, types
 from aiogram.utils import exceptions
 import dotenv
@@ -72,6 +73,8 @@ async def check_updates(user_id):
             if moodle.user.is_ignore:
                 await send(moodle.user.user_id, 'Your courses are *ready*\!')
 
+            if moodle.user.cookies.__class__ is SimpleCookie:
+                moodle.user.cookies = {k: v.value for k, v in moodle.user.cookies.items()}
             await aioredis.set_key(moodle.user.user_id, 'token', moodle.user.token)
             await aioredis.set_key(moodle.user.user_id, 'cookies', moodle.user.cookies)
             await aioredis.set_key(moodle.user.user_id, 'courses', moodle.user.courses)
