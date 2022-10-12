@@ -78,9 +78,9 @@ class Moodle():
             async with s.post("/login/index.php", data=payload, timeout=15) as r_2:
                 text = await r_2.read()
                 if "Invalid login" in str(text):
-                    return await s.cookie_jar.filter_cookies('https://moodle.astanait.edu.kz'), 0
+                    return {} , 0
                 else:
-                    return await s.cookie_jar.filter_cookies('https://moodle.astanait.edu.kz'), 1
+                    return s.cookie_jar.filter_cookies('https://moodle.astanait.edu.kz'), 1
 
 
     async def check_cookies(self):

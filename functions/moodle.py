@@ -80,8 +80,6 @@ async def check_updates(user_id):
             await aioredis.set_key(moodle.user.user_id, 'new_user', '0')
             return 'Success'
         else:
-            if not moodle.user.token:
-                return 'Invalid token'
             return user.msg
 
 
