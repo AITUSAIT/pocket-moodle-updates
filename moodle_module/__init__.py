@@ -232,7 +232,7 @@ class Moodle():
                 assignment_id = str(assign['cmid'])
                 assignment_name = assign['name']
                 assignment_due = datetime.utcfromtimestamp(assign['duedate']).strftime('%A, %d %B %Y, %I:%M %p')
-                assignment_graded = bool(assign['grade'])
+                assignment_graded = bool(int(assign['grade']))
 
                 url_to_assign = f'https://moodle.astanait.edu.kz/mod/assign/view.php?id={assignment_id}'
                 
