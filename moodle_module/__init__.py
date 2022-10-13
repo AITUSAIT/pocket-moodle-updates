@@ -228,25 +228,25 @@ class Moodle():
             course_name = clear_MD(course['name'])
             url_to_course = f"/course/view.php?id={course['id']}"
 
-            for assign in course_assigns['assignments']:
-                assignment_id = str(assign['cmid'])
-                assignment_name = assign['name']
-                assignment_due = datetime.utcfromtimestamp(assign['duedate']).strftime('%A, %d %B %Y, %I:%M %p')
-                assignment_graded = bool(int(assign['grade']))
+            if int(course['id']) in active_courses_ids:
+                for assign in course_assigns['assignments']:
+                    assignment_id = str(assign['cmid'])
+                    assignment_name = assign['name']
+                    assignment_due = (datetime.utcfromtimestamp(assign['duedate']) + timedelta(hours=6)).strftime('%A, %d %B %Y, %I:%M %p')
+                    assignment_graded = bool(int(assign['grade']))
 
-                url_to_assign = f'https://moodle.astanait.edu.kz/mod/assign/view.php?id={assignment_id}'
-                
-                if assignment_id not in course['assignments']:
-                    assignment_dict = {
-                        'id': assignment_id,
-                        'name': assignment_name,
-                        'due': assignment_due,
-                        'graded': assignment_graded,
-                        'status': 0
-                    }
-                    course['assignments'][assignment_id] = assignment_dict
-                    diff_time = get_diff_time(assignment_due)
-                    if not assignment_graded:
+                    url_to_assign = f'https://moodle.astanait.edu.kz/mod/assign/view.php?id={assignment_id}'
+                    
+                    if assignment_id not in course['assignments']:
+                        assignment_dict = {
+                            'id': assignment_id,
+                            'name': assignment_name,
+                            'due': assignment_due,
+                            'graded': assignment_graded,
+                            'status': 0
+                        }
+                        course['assignments'][assignment_id] = assignment_dict
+                        diff_time = get_diff_time(assignment_due)
                         if not course_state1:
                             course_state1 = 1
                             new_deadlines[index_new] += f"\n\n  [{course_name}]({clear_MD(url_to_course)}):"
@@ -256,17 +256,16 @@ class Moodle():
                         if len(new_deadlines[index_new]) > 3000:
                             index_new += 1
                             new_deadlines.append('')
-                else:
-                    assign = course['assignments'][assignment_id]
+                    else:
+                        assign = course['assignments'][assignment_id]
 
-                    diff_time = get_diff_time(assign['due'])
-                    if assign['id'] == assignment_id and assignment_graded != assign['graded']:
-                        assign['graded'] = assignment_graded
+                        diff_time = get_diff_time(assign['due'])
+                        if assign['id'] == assignment_id:
+                            assign['graded'] = assignment_graded
 
-                    if assign['id'] == assignment_id and assignment_due != assign['due']:
-                        assign['due'] = assignment_due
-                        assign['status'] = 0
-                        if not assignment_graded:
+                        if assign['id'] == assignment_id and assignment_due != assign['due']:
+                            assign['due'] = assignment_due
+                            assign['status'] = 0
                             if not course_state2:
                                 course_state2 = 1
                                 updated_deadlines[index_updated] += f"\n\n  [{course_name}]({clear_MD(url_to_course)}):"
@@ -277,8 +276,7 @@ class Moodle():
                                 index_updated += 1
                                 updated_deadlines.append('')
 
-                    if assign['id'] == assignment_id and not assign['status'] and diff_time>timedelta(days=0) and diff_time<timedelta(days=3):
-                        if not assignment_graded:
+                        if assign['id'] == assignment_id and not assign['status'] and diff_time>timedelta(days=0) and diff_time<timedelta(days=3):
                             if not course_state3:
                                 course_state3 = 1
                                 upcoming_deadlines[index_upcoming] += f"\n\n  [{course_name}]({clear_MD(url_to_course)}):"
