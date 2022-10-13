@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import os
+from pprint import pprint
 import re
 
 import aiohttp
@@ -61,7 +62,7 @@ class Moodle():
         else:
             self.user.login_status = True
 
-        if self.user.token is None:
+        if self.user.token is None and self.user.login_status:
             await self.get_and_set_token()
 
 
@@ -209,7 +210,7 @@ class Moodle():
         return [new_grades, updated_grades]
     
 
-    async def set_assigns(self, courses_assigns):
+    async def set_assigns(self, courses_assigns, active_courses_ids):
         course_state1 = 0
         course_state2 = 0
         course_state3 = 0
@@ -228,24 +229,24 @@ class Moodle():
             url_to_course = f"/course/view.php?id={course['id']}"
 
             for assign in course_assigns['assignments']:
-                assignment_id = str(assign['id'])
+                assignment_id = str(assign['cmid'])
                 assignment_name = assign['name']
                 assignment_due = datetime.utcfromtimestamp(assign['duedate']).strftime('%A, %d %B %Y, %I:%M %p')
-                assignment_sub = bool(assign['nosubmissions'])
                 assignment_graded = bool(assign['grade'])
 
                 url_to_assign = f'https://moodle.astanait.edu.kz/mod/assign/view.php?id={assignment_id}'
+                
                 if assignment_id not in course['assignments']:
                     assignment_dict = {
                         'id': assignment_id,
                         'name': assignment_name,
                         'due': assignment_due,
-                        'submitted': assignment_sub,
+                        'graded': assignment_graded,
                         'status': 0
                     }
                     course['assignments'][assignment_id] = assignment_dict
                     diff_time = get_diff_time(assignment_due)
-                    if not assignment_sub:
+                    if not assignment_graded:
                         if not course_state1:
                             course_state1 = 1
                             new_deadlines[index_new] += f"\n\n  [{course_name}]({clear_MD(url_to_course)}):"
@@ -259,13 +260,13 @@ class Moodle():
                     assign = course['assignments'][assignment_id]
 
                     diff_time = get_diff_time(assign['due'])
-                    if assign['id'] == assignment_id and assignment_sub != assign['submitted']:
-                        assign['submitted'] = assignment_sub
+                    if assign['id'] == assignment_id and assignment_graded != assign['submitted']:
+                        assign['submitted'] = assignment_graded
 
                     if assign['id'] == assignment_id and assignment_due != assign['due']:
                         assign['due'] = assignment_due
                         assign['status'] = 0
-                        if not assignment_sub:
+                        if not assignment_graded:
                             if not course_state2:
                                 course_state2 = 1
                                 updated_deadlines[index_updated] += f"\n\n  [{course_name}]({clear_MD(url_to_course)}):"
@@ -277,7 +278,7 @@ class Moodle():
                                 updated_deadlines.append('')
 
                     if assign['id'] == assignment_id and not assign['status'] and diff_time>timedelta(days=0) and diff_time<timedelta(days=3):
-                        if not assignment_sub:
+                        if not assignment_graded:
                             if not course_state3:
                                 course_state3 = 1
                                 upcoming_deadlines[index_upcoming] += f"\n\n  [{course_name}]({clear_MD(url_to_course)}):"
