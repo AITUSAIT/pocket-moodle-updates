@@ -259,7 +259,7 @@ class Moodle():
                     else:
                         assign = course['assignments'][assignment_id]
 
-                        diff_time = get_diff_time(assign['due'])
+                        diff_time = get_diff_time(assignment_due)
                         if assign['id'] == assignment_id:
                             assign['graded'] = assignment_graded
 
