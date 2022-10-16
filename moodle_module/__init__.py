@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 import os
-from pprint import pprint
 import re
 
 import aiohttp
@@ -200,12 +199,13 @@ class Moodle():
                 elif id in course['grades'].keys() and str(percentage) != str(course['grades'][id]['percentage']):
                     old_grade = course['grades'][id]['percentage']
                     course['grades'][id]['percentage'] = percentage
-                    if clear_MD(course['name']) not in updated_grades[index_updated]:
-                        updated_grades[index_updated] += f"\n\n  [{clear_MD(course['name'])}]({clear_MD(url_to_course)}):"
-                    updated_grades[index_updated] += f"\n      {clear_MD(name)} / {clear_MD(old_grade)} \-\> {clear_MD(percentage)}"
-                    if len(updated_grades[index_updated]) > 3000:
-                        index_updated += 1
-                        updated_grades.append('')
+                    if percentage != 'Error':
+                        if clear_MD(course['name']) not in updated_grades[index_updated]:
+                            updated_grades[index_updated] += f"\n\n  [{clear_MD(course['name'])}]({clear_MD(url_to_course)}):"
+                        updated_grades[index_updated] += f"\n      {clear_MD(name)} / {clear_MD(old_grade)} \-\> {clear_MD(percentage)}"
+                        if len(updated_grades[index_updated]) > 3000:
+                            index_updated += 1
+                            updated_grades.append('')
 
         return [new_grades, updated_grades]
     

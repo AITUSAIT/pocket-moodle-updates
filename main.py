@@ -62,8 +62,9 @@ async def main():
     await aioredis.close()
 
 
-try:
-    asyncio.run(main())
-except Exception as exc:
-    logger.error(exc, exc_info=True)
-    logger.info('End')
+while 1:
+    try:
+        asyncio.run(main())
+    except Exception as exc:
+        logger.error(exc, exc_info=True)
+        asyncio.run(main())
