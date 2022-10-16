@@ -306,30 +306,34 @@ class Moodle():
 
 
     async def get_attendance(self, course_id):
-        async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', cookies=self.user.cookies) as s:
-            async with s.get(f'/course/view.php?id={course_id}', timeout=15) as request:
-                text = await request.read()
-                soup = BeautifulSoup(text, 'html.parser')
-                li = soup.find('li', {'class': 'attendance'})
-                item = li.find('a', {'class': 'aalink'})
-                if 'attendance' in item.get('href'):
-                    att_id = item.get('href').replace('https://moodle.astanait.edu.kz/mod/attendance/view.php?id=', '')
-                    if os.getenv('ATT_STATE') == "1":
-                        os.environ["ATT_STATE"] = "0"
-                        await self.get_att_stat(s, att_id)
+        try:
+            async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', cookies=self.user.cookies) as s:
+                async with s.get(f'/course/view.php?id={course_id}', timeout=15) as request:
+                    text = await request.read()
+                    soup = BeautifulSoup(text, 'html.parser')
+                    li = soup.find('li', {'class': 'attendance'})
+                    item = li.find('a', {'class': 'aalink'})
+                    if 'attendance' in item.get('href'):
+                        att_id = item.get('href').replace('https://moodle.astanait.edu.kz/mod/attendance/view.php?id=', '')
+                        if os.getenv('ATT_STATE') == "1":
+                            os.environ["ATT_STATE"] = "0"
+                            await self.get_att_stat(s, att_id)
 
-                href = (item.get('href')+'&view=5').replace('https://moodle.astanait.edu.kz', '')
-                async with s.get(href, timeout=15) as request:
-                    text = await request.text()
-                    soup2 = BeautifulSoup(text, 'html.parser')
-                    table = soup2.find('table', {'class':'attlist'})
-                    c0_arr = table.find_all('td', {'class':'cell c0'})
-                    c1_arr = table.find_all('td', {'class':'cell c1 lastcol'})
+                    href = (item.get('href')+'&view=5').replace('https://moodle.astanait.edu.kz', '')
+                    async with s.get(href, timeout=15) as request:
+                        text = await request.text()
+                        soup2 = BeautifulSoup(text, 'html.parser')
+                        table = soup2.find('table', {'class':'attlist'})
+                        c0_arr = table.find_all('td', {'class':'cell c0'})
+                        c1_arr = table.find_all('td', {'class':'cell c1 lastcol'})
 
-                    self.user.courses[str(course_id)]['attendance'] = {}
-                    for j in range(0, len(c0_arr)):
-                        text = str(c0_arr[j].getText().replace(':', ''))
-                        self.user.courses[str(course_id)]['attendance'][text] = c1_arr[j].getText()
+                        self.user.courses[str(course_id)]['attendance'] = {}
+                        for j in range(0, len(c0_arr)):
+                            text = str(c0_arr[j].getText().replace(':', ''))
+                            self.user.courses[str(course_id)]['attendance'][text] = c1_arr[j].getText()
+        except:
+            ...
+
 
     # ok
     async def get_users_by_field(self):
