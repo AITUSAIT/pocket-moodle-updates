@@ -247,15 +247,16 @@ class Moodle():
                         }
                         course['assignments'][assignment_id] = assignment_dict
                         diff_time = get_diff_time(assignment_due)
-                        if not course_state1:
-                            course_state1 = 1
-                            new_deadlines[index_new] += f"\n\n  [{course_name}]({clear_MD(url_to_course)}):"
-                        new_deadlines[index_new] += f"\n      [{clear_MD(assignment_dict['name'])}]({clear_MD(url_to_assign)})"
-                        new_deadlines[index_new] += f"\n      {clear_MD(assignment_due)}"
-                        new_deadlines [index_new]+= f"\n      Remaining: {clear_MD(diff_time)}\n"
-                        if len(new_deadlines[index_new]) > 3000:
-                            index_new += 1
-                            new_deadlines.append('')
+                        if diff_time > timedelta(days=0):
+                            if not course_state1:
+                                course_state1 = 1
+                                new_deadlines[index_new] += f"\n\n  [{course_name}]({clear_MD(url_to_course)}):"
+                            new_deadlines[index_new] += f"\n      [{clear_MD(assignment_dict['name'])}]({clear_MD(url_to_assign)})"
+                            new_deadlines[index_new] += f"\n      {clear_MD(assignment_due)}"
+                            new_deadlines [index_new]+= f"\n      Remaining: {clear_MD(diff_time)}\n"
+                            if len(new_deadlines[index_new]) > 3000:
+                                index_new += 1
+                                new_deadlines.append('')
                     else:
                         assign = course['assignments'][assignment_id]
 
