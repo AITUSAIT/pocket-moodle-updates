@@ -9,4 +9,4 @@ def run_server():
     asyncio.set_event_loop(asyncio.new_event_loop())
     app = web.Application(debug=True)
     app.add_routes([web.get('/', root)])
-    web.run_app(app, handle_signals=False)
+    web.run_app(app, handle_signals=False, port=8000)
