@@ -1,5 +1,6 @@
 import asyncio
 import os
+import threading
 import time
 
 import aiohttp
@@ -8,7 +9,7 @@ import dotenv
 from functions import aioredis
 from functions.logger import logger
 from functions.moodle import check_updates, send
-from server.module import start_server
+from server.module import aiohttp_server, run_server
 
 dotenv.load_dotenv()
 
@@ -66,7 +67,8 @@ async def main():
     await aioredis.close()
 
 
-start_server()
+threading.Thread(target=run_server, args=(aiohttp_server(),), daemon=True).start()
+
 while 1:
     try:
         asyncio.run(main())
