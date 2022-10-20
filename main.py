@@ -1,5 +1,6 @@
 import asyncio
 import os
+import time
 
 import aiohttp
 import dotenv
@@ -7,6 +8,7 @@ import dotenv
 from functions import aioredis
 from functions.logger import logger
 from functions.moodle import check_updates, send
+from server.module import start_server
 
 dotenv.load_dotenv()
 
@@ -59,12 +61,15 @@ async def main():
                     }
                     async with session.post(f'{MAIN_HOST}/api/update_user?token={token}', data=params, ssl=False) as response:
                         logger.info(f"{user['user_id']} - {response.status}")
+                else:
+                    await asyncio.sleep(10)
     await aioredis.close()
 
 
+start_server()
 while 1:
     try:
         asyncio.run(main())
     except Exception as exc:
         logger.error(exc, exc_info=True)
-        asyncio.run(main())
+        time.sleep(10)
