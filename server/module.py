@@ -11,4 +11,4 @@ async def root(request):
 def start_server():
     app = web.Application()
     app.add_routes(routes)
-    web.run_app(app, access_log=None)
+    web.run_app(app, access_log=None, port=8000)
