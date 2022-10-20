@@ -9,7 +9,7 @@ import dotenv
 from functions import aioredis
 from functions.logger import logger
 from functions.moodle import check_updates, send
-from server.module import aiohttp_server, run_server
+from server.module import run_server
 
 dotenv.load_dotenv()
 
@@ -49,29 +49,28 @@ async def main():
         REDIS_DB
     )
     while 1:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f'{MAIN_HOST}/api/get_user?token={token}', ssl=False) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    user = data['user']
-                    os.environ["ATT_STATE"] = "1"
-                    result = await run_check(user)
-                    params = {
-                        'user_id': user['user_id'],
-                        'result': result,
-                    }
-                    async with session.post(f'{MAIN_HOST}/api/update_user?token={token}', data=params, ssl=False) as response:
-                        logger.info(f"{user['user_id']} - {response.status}")
-                else:
-                    await asyncio.sleep(10)
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f'{MAIN_HOST}/api/get_user?token={token}', ssl=False) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        user = data['user']
+                        os.environ["ATT_STATE"] = "1"
+                        result = await run_check(user)
+                        params = {
+                            'user_id': user['user_id'],
+                            'result': result,
+                        }
+                        async with session.post(f'{MAIN_HOST}/api/update_user?token={token}', data=params, ssl=False) as response:
+                            logger.info(f"{user['user_id']} - {response.status}")
+                    else:
+                        await asyncio.sleep(10)
+        except:
+            await asyncio.sleep(10)
+
     await aioredis.close()
 
 
-threading.Thread(target=run_server, args=(aiohttp_server(),), daemon=True).start()
+threading.Thread(target=run_server, args=(), daemon=True).start()
 
-while 1:
-    try:
-        asyncio.run(main())
-    except Exception as exc:
-        logger.error(exc, exc_info=True)
-        time.sleep(10)
+asyncio.run(main())
