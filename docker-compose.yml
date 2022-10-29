@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  pocketmoodleupdates:
+    image: pocketmoodleupdates
+    build:
+      context: .
+      dockerfile: ./Dockerfile

@@ -11,11 +11,6 @@ dotenv.load_dotenv()
 
 TOKEN = os.getenv('TOKEN')
 
-host = os.getenv('HOST')
-port = os.getenv('PORT')
-login = os.getenv('LOGIN')
-passwd = os.getenv('PASSWD')
-
 bot = Bot(token=TOKEN, parse_mode=types.ParseMode.MARKDOWN_V2)
 dp = Dispatcher(bot)
 

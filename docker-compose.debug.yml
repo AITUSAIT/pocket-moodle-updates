@@ -1,0 +1,21 @@
+version: '3.4'
+
+services:
+  pocketmoodleupdates:
+    image: pocketmoodleupdates
+    environment: 
+      TOKEN: "${TOKEN}"
+      REDIS_HOST: "${REDIS_HOST}"
+      REDIS_PORT: "${REDIS_PORT}"
+      REDIS_DB: "${REDIS_DB}"
+      REDIS_USER: "${REDIS_USER}"
+      REDIS_PASSWD: "${REDIS_PASSWD}"
+      MAIN_HOST: "${MAIN_HOST}"
+      token: "${token}"
+      WDM_LOG: "${WDM_LOG}"
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    command: ["sh", "-c", "pip install debugpy -t /tmp && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 main.py "]
+    ports:
+      - 8000:8001
