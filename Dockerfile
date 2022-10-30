@@ -2,6 +2,8 @@ FROM ubuntu:22.04
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV TZ=Asia/Almaty
+
 COPY requirements.txt .
 
 RUN apt-get update && apt-get upgrade && \
@@ -13,9 +15,10 @@ RUN apt-get update && apt-get upgrade && \
     wget https://chromedriver.storage.googleapis.com/107.0.5304.62/chromedriver_linux64.zip && \
     unzip chromedriver_linux64.zip && \
     mv chromedriver /usr/bin/chromedriver && \
-    chmod +x /usr/bin/chromedriver \
-    ln -fs /usr/share/zoneinfo/Asia/Almaty /etc/localtime && \
-    dpkg-reconfigure -f noninteractive tzdata
+    chmod +x /usr/bin/chromedriver && \
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && \
+    dpkg-reconfigure --frontend noninteractive tzdata
+
 
 WORKDIR /pocket-moodle-updates
 COPY . /pocket-moodle-updates
