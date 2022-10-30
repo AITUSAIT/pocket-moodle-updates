@@ -18,4 +18,4 @@ services:
       dockerfile: ./Dockerfile
     command: ["sh", "-c", "pip install debugpy -t /tmp && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 main.py "]
     ports:
-      - 8000:8001
+      - 8000:8000
