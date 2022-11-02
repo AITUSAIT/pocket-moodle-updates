@@ -5,7 +5,7 @@ import re
 import aiohttp
 from bs4 import BeautifulSoup
 
-from functions.functions import clear_MD, get_diff_time, replace_grade_name, timeit
+from functions.functions import clear_MD, get_diff_time, replace_grade_name
 
 from .browser import get_cookies
 
@@ -148,6 +148,10 @@ class Moodle():
                     'grades': {},
                     'assignments': {}
                 }
+            else:
+                self.user.courses[str(new_course['id'])]['active'] = True if new_course['id'] in active_courses_ids else False,
+
+        
     
 
     async def set_grades(self, courses_grades):

@@ -1,20 +1,15 @@
 import asyncio
-import json
 import os
 from asyncio import sleep
 
-import aiohttp
 import dotenv
 from arsenic import browsers, get_session, services
 from arsenic.errors import UnknownArsenicError
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils import exceptions
 
-from functions.functions import (decrypt, get_cookies_data,
-                                 set_arsenic_log_level, timeit)
+from functions.functions import (get_cookies_data, set_arsenic_log_level)
 from functions.gpa import get_soup, login_and_get_gpa
-from functions.moodle_functions import (add_new_courses, add_new_courses, auth_moodle,
-                                        clear_courses, get_assignments_of_course, get_courses, get_grades_of_course)
 from functions import aioredis
 from functions.logger import logger
 
