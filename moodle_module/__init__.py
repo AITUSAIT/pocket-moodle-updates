@@ -139,20 +139,18 @@ class Moodle():
     
     
     async def add_new_courses(self, courses, active_courses_ids):
-        for new_course in courses:
-            if str(new_course['id']) not in self.user.courses.keys():
-                self.user.courses[str(new_course['id'])] = {
-                    'id': str(new_course['id']),
-                    'name': new_course['shortname'],
-                    'active': True if new_course['id'] in active_courses_ids else False,
+        for course in courses:
+            if str(course['id']) not in self.user.courses.keys():
+                self.user.courses[str(course['id'])] = {
+                    'id': str(course['id']),
+                    'name': course['shortname'],
+                    'active': True if str(course['id']) in active_courses_ids else False,
                     'grades': {},
                     'assignments': {}
                 }
             else:
-                self.user.courses[str(new_course['id'])]['active'] = True if new_course['id'] in active_courses_ids else False,
+                self.user.courses[str(course['id'])]['active'] = True if int(course['id']) in active_courses_ids else False
 
-        
-    
 
     async def set_grades(self, courses_grades):
         new_grades = ['New grades:']
