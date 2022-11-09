@@ -144,7 +144,7 @@ class Moodle():
                 self.user.courses[str(course['id'])] = {
                     'id': str(course['id']),
                     'name': course['shortname'],
-                    'active': True if str(course['id']) in active_courses_ids else False,
+                    'active': True if int(course['id']) in active_courses_ids else False,
                     'grades': {},
                     'assignments': {}
                 }
