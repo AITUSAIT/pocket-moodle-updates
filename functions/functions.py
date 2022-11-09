@@ -53,7 +53,7 @@ def timeit(func):
     return helper
 
 
-async def set_arsenic_log_level(level = logging.WARNING):
+def set_arsenic_log_level(level = logging.WARNING):
     logger = logging.getLogger('arsenic')
 
 

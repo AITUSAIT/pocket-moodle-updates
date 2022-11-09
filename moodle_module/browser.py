@@ -1,27 +1,17 @@
 from asyncio import sleep
 
-from arsenic import browsers, get_session, services
+from arsenic import get_session
 from arsenic.errors import UnknownArsenicError
 from functions.bot import send
 
-from functions.functions import (get_cookies_data, set_arsenic_log_level)
+from functions.functions import get_cookies_data
 from functions.gpa import get_soup, login_and_get_gpa
 from functions import aioredis
 from functions.logger import logger
+from config import service, browser
 
 
 async def get_cookies(user_id, BARCODE, PASSWD):
-    await set_arsenic_log_level()
-    import os
-    service = services.Chromedriver(binary='/usr/bin/chromedriver')
-    service.log_file = os.devnull
-    browser = browsers.Chrome()
-    browser.capabilities = {
-        "goog:chromeOptions": {"args": ['--headless', '--disable-gpu', "--no-sandbox",
-                                        "--disable-dev-shm-usage", "--disable-crash-reporter",
-                                        "--log-level=3", "--disable-extensions",
-                                        "--disable-in-process-stack-traces", "--disable-logging",
-                                        "--output=/dev/null"]}}
     async with get_session(service, browser) as session:
         url = "https://moodle.astanait.edu.kz/auth/oidc/"
         await session.get(url)
