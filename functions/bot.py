@@ -1,18 +1,9 @@
 import asyncio
-import os
 
-import dotenv
-from aiogram import Bot, Dispatcher, types
+from aiogram import types
 from aiogram.utils import exceptions
-
+from config import bot
 from functions.logger import logger
-
-dotenv.load_dotenv()
-
-TOKEN = os.getenv('TOKEN')
-
-bot = Bot(token=TOKEN, parse_mode=types.ParseMode.MARKDOWN_V2)
-dp = Dispatcher(bot)
 
 
 async def send(chat_id, text):

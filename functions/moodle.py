@@ -1,45 +1,9 @@
 import asyncio
-import os
-
 from http.cookies import SimpleCookie
-from aiogram import Bot, types
-from aiogram.utils import exceptions
-import dotenv
 
 from functions import aioredis
+from functions.bot import send
 from moodle_module import Moodle, UserType
-from functions.logger import logger
-
-dotenv.load_dotenv()
-
-REDIS_HOST = os.getenv('REDIS_HOST')
-REDIS_PORT = os.getenv('REDIS_PORT')
-REDIS_DB = os.getenv('REDIS_DB')
-REDIS_USER = os.getenv('REDIS_USER')
-REDIS_PASSWD = os.getenv('REDIS_PASSWD')
-
-TOKEN = os.getenv('TOKEN')
-
-bot = Bot(token=TOKEN, parse_mode=types.ParseMode.MARKDOWN_V2)
-
-
-async def send(chat_id, text):
-    markup = types.InlineKeyboardMarkup()
-    switch_button = types.InlineKeyboardButton(text='Delete', callback_data="delete")
-    markup.add(switch_button)
-    try:
-        await bot.send_message(chat_id, text, reply_markup=markup, disable_notification=True)
-    except exceptions.BotBlocked:
-        ...
-    except exceptions.ChatNotFound:
-        ...
-    except exceptions.RetryAfter as e:
-        await asyncio.sleep(e.timeout)
-        return await send(chat_id, text)
-    except exceptions.UserDeactivated:
-        ...
-    except exceptions.TelegramAPIError:
-        logger.error(f"{chat_id}\n{text}\n", exc_info=True)
 
 
 async def check_updates(user_id):
@@ -81,8 +45,13 @@ async def check_updates(user_id):
             await aioredis.set_key(moodle.user.user_id, 'att_statistic', moodle.user.att_statistic)
             await aioredis.set_key(moodle.user.user_id, 'ignore', '0')
             await aioredis.set_key(moodle.user.user_id, 'new_user', '0')
+            del user
+            del moodle
             return 'Success'
         else:
-            return user.msg
+            msg = user.msg
+            del user
+            del moodle
+            return msg
 
 

@@ -1,44 +1,13 @@
-import asyncio
-import os
 from asyncio import sleep
 
-import dotenv
 from arsenic import browsers, get_session, services
 from arsenic.errors import UnknownArsenicError
-from aiogram import Bot, Dispatcher, types
-from aiogram.utils import exceptions
+from functions.bot import send
 
 from functions.functions import (get_cookies_data, set_arsenic_log_level)
 from functions.gpa import get_soup, login_and_get_gpa
 from functions import aioredis
 from functions.logger import logger
-
-dotenv.load_dotenv()
-
-TOKEN = os.getenv('TOKEN')
-
-bot = Bot(token=TOKEN, parse_mode=types.ParseMode.MARKDOWN_V2)
-dp = Dispatcher(bot)
-
-
-async def send(chat_id, text):
-    markup = types.InlineKeyboardMarkup()
-    switch_button = types.InlineKeyboardButton(text='Delete', callback_data="delete")
-    markup.add(switch_button)
-    try:
-        await bot.send_message(chat_id, text, reply_markup=markup, disable_notification=True)
-    except exceptions.BotBlocked:
-        ...
-    except exceptions.ChatNotFound:
-        ...
-    except exceptions.RetryAfter as e:
-        await asyncio.sleep(e.timeout)
-        return await send(chat_id, text)
-    except exceptions.UserDeactivated:
-        ...
-    except exceptions.TelegramAPIError:
-        logger.error(f"{chat_id}\n{text}\n", exc_info=True)
-
 
 
 async def get_cookies(user_id, BARCODE, PASSWD):
@@ -77,6 +46,7 @@ async def get_cookies(user_id, BARCODE, PASSWD):
                 if await error.is_displayed():
                     if not await aioredis.check_if_msg(user_id):
                         await send(user_id, 'Invalid login or password\n/register\_moodle to fix')
+                    await session.close()
                     return {}, False, 'Invalid Login (barcode)'
             except:
                 pass
@@ -93,6 +63,7 @@ async def get_cookies(user_id, BARCODE, PASSWD):
                         await button.click()
                         break
                 except UnknownArsenicError as UAE:
+                    await session.close()
                     return {}, False, -1
                 except:
                     await sleep(0.1)
@@ -103,12 +74,14 @@ async def get_cookies(user_id, BARCODE, PASSWD):
                 if await error.is_displayed():
                     if not await aioredis.check_if_msg(user_id):
                         await send(user_id, 'Invalid login or password\n/register\_moodle to fix')
+                    await session.close()
                     return {}, False, 'Invalid Login (passwd)'
             except:
                 pass
             try:
                 error = await session.get_element('input[id=idSubmit_ProofUp_Redirect]')
                 if await error.is_displayed():
+                    await session.close()
                     return {}, False, 'Invalid Login (proof)'
             except:
                 pass
@@ -128,9 +101,12 @@ async def get_cookies(user_id, BARCODE, PASSWD):
             if count < 100:
                 cookies = await get_cookies_data(session)
                 await login_and_get_gpa(user_id, await get_soup(session))
+                await session.close()
                 return cookies, True, ''
             else:
+                await session.close()
                 return {}, False, -1
         except Exception as exc:
             logger.error(user_id, exc_info=True)
+            await session.close()
             return {}, False, -1

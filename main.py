@@ -1,26 +1,15 @@
 import asyncio
 import os
 import threading
-import time
 
 import aiohttp
-import dotenv
 
+from config import (MAIN_HOST, REDIS_DB, REDIS_HOST, REDIS_PASSWD, REDIS_PORT,
+                    REDIS_USER, token)
 from functions import aioredis
 from functions.logger import logger
 from functions.moodle import check_updates, send
 from server.module import run_server
-
-dotenv.load_dotenv()
-
-REDIS_HOST = os.getenv('REDIS_HOST')
-REDIS_PORT = os.getenv('REDIS_PORT')
-REDIS_DB = os.getenv('REDIS_DB')
-REDIS_USER = os.getenv('REDIS_USER')
-REDIS_PASSWD = os.getenv('REDIS_PASSWD')
-
-MAIN_HOST = os.getenv('MAIN_HOST')
-token = os.getenv('token')
 
 
 async def run_check(user):
@@ -64,9 +53,10 @@ async def main():
                         async with session.post(f'{MAIN_HOST}/api/update_user?token={token}', data=params, ssl=False) as response:
                             logger.info(f"{user['user_id']} - {response.status}")
                     else:
-                        await asyncio.sleep(10)
-        except:
-            await asyncio.sleep(10)
+                        await asyncio.sleep(5)
+        except Exception as exc:
+            logger.error(exc, exc_info=True)
+            await asyncio.sleep(5)
 
     await aioredis.close()
 
