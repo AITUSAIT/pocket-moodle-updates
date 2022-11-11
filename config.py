@@ -21,14 +21,21 @@ TOKEN = os.getenv('TOKEN')
 
 bot = Bot(token=TOKEN, parse_mode=types.ParseMode.MARKDOWN_V2)
 
+service = None
+browser = None
 
-set_arsenic_log_level()
-service = services.Chromedriver(binary='/usr/bin/chromedriver')
-service.log_file = os.devnull
-browser = browsers.Chrome()
-browser.capabilities = {
-    "goog:chromeOptions": {"args": ['--headless', '--disable-gpu', "--no-sandbox",
-                                    "--disable-dev-shm-usage", "--disable-crash-reporter",
-                                    "--log-level=3", "--disable-extensions",
-                                    "--disable-in-process-stack-traces", "--disable-logging",
-                                    "--output=/dev/null"]}}
+def set_services():
+    print('call')
+    global service
+    global browser
+    set_arsenic_log_level()
+    service = services.Chromedriver(binary='/usr/bin/chromedriver')
+    service.log_file = os.devnull
+    browser = browsers.Chrome()
+    browser.capabilities = {
+        "goog:chromeOptions": {"args": ['--headless', '--disable-gpu', "--no-sandbox",
+                                        "--disable-dev-shm-usage", "--disable-crash-reporter",
+                                        "--log-level=3", "--disable-extensions",
+                                        "--disable-in-process-stack-traces", "--disable-logging",
+                                        "--output=/dev/null"]}}
+set_services()

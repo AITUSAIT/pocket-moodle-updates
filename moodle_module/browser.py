@@ -1,13 +1,13 @@
 from asyncio import sleep
 import os
 
-from arsenic import browsers, get_session, services
+from arsenic import get_session
 from arsenic.errors import UnknownArsenicError
 
 from config import browser, service
 from functions import aioredis
 from functions.bot import send
-from functions.functions import get_cookies_data, set_arsenic_log_level
+from functions.functions import get_cookies_data
 from functions.gpa import get_soup, login_and_get_gpa
 from functions.logger import logger
 
@@ -103,16 +103,4 @@ async def get_cookies(user_id, BARCODE, PASSWD):
                 await session.close()
                 return {}, False, -1
     except BlockingIOError:
-        global service
-        global browser
-        set_arsenic_log_level()
-        service = services.Chromedriver(binary='/usr/bin/chromedriver')
-        service.log_file = os.devnull
-        browser = browsers.Chrome()
-        browser.capabilities = {
-            "goog:chromeOptions": {"args": ['--headless', '--disable-gpu', "--no-sandbox",
-                                            "--disable-dev-shm-usage", "--disable-crash-reporter",
-                                            "--log-level=3", "--disable-extensions",
-                                            "--disable-in-process-stack-traces", "--disable-logging",
-                                            "--output=/dev/null"]}}
         await get_cookies(user_id, BARCODE, PASSWD)

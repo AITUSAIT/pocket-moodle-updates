@@ -5,7 +5,7 @@ import threading
 import aiohttp
 
 from config import (MAIN_HOST, REDIS_DB, REDIS_HOST, REDIS_PASSWD, REDIS_PORT,
-                    REDIS_USER, token)
+                    REDIS_USER, set_services, token)
 from functions import aioredis
 from functions.logger import logger
 from functions.moodle import check_updates, send
@@ -38,6 +38,7 @@ async def main():
         REDIS_DB
     )
     while 1:
+        user = {}
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(f'{MAIN_HOST}/api/get_user?token={token}', ssl=False) as response:
@@ -55,7 +56,7 @@ async def main():
                     else:
                         await asyncio.sleep(5)
         except Exception as exc:
-            logger.error(exc, exc_info=True)
+            logger.error(f"{user.get('user_id', None)} {exc}", exc_info=True)
             await asyncio.sleep(5)
 
     await aioredis.close()
