@@ -25,7 +25,6 @@ service = None
 browser = None
 
 def set_services():
-    print('call')
     global service
     global browser
     set_arsenic_log_level()
