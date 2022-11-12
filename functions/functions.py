@@ -53,25 +53,6 @@ def timeit(func):
     return helper
 
 
-def set_arsenic_log_level(level = logging.WARNING):
-    logger = logging.getLogger('arsenic')
-
-
-    def logger_factory():
-        return logger
-
-    structlog.configure(logger_factory=logger_factory)
-    logger.setLevel(level)
-
-
-async def get_cookies_data(session):
-    cookies = {}
-    session_cookies = await session.get_all_cookies()
-    for cookie in session_cookies:
-        cookies[cookie['name']] = cookie['value']
-    return cookies
-
-
 def crypto(message: str, secret: str) -> str:
     new_chars = list()
     i = 0

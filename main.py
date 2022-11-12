@@ -5,7 +5,7 @@ import threading
 import aiohttp
 
 from config import (MAIN_HOST, REDIS_DB, REDIS_HOST, REDIS_PASSWD, REDIS_PORT,
-                    REDIS_USER, set_services, token)
+                    REDIS_USER, token)
 from functions import aioredis
 from functions.logger import logger
 from functions.moodle import check_updates, send

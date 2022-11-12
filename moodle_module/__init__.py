@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 
 from functions.functions import clear_MD, get_diff_time, replace_grade_name
 
-from .browser import get_cookies
+from .browser import Browser
 
 
 class UserType:
@@ -49,7 +49,8 @@ class Moodle():
         if await self.check_cookies() is False:
             if str(self.user.barcode).isdigit():
                 if int(self.user.barcode) >= 210000:
-                    self.user.cookies, self.user.login_status, self.user.msg = await get_cookies(self.user.user_id, self.user.barcode, self.user.passwd)
+                    browser = Browser()
+                    self.user.cookies, self.user.login_status, self.user.msg = await browser.get_cookies_moodle(self.user.user_id, self.user.barcode, self.user.passwd)
                 elif int(self.user.barcode) < 210000:
                     self.user.cookies, self.user.login_status = await self.auth_moodle()
                     if self.user.login_status:
@@ -57,7 +58,8 @@ class Moodle():
                     else:
                         self.user.msg = 'Invalid login or password'
             else:    
-                self.user.cookies, self.user.login_status, self.user.msg = await get_cookies(self.user.user_id, self.user.barcode, self.user.passwd)
+                browser = Browser()
+                self.user.cookies, self.user.login_status, self.user.msg = await browser.get_cookies_moodle(self.user.user_id, self.user.barcode, self.user.passwd)
         else:
             self.user.login_status = True
 
@@ -81,6 +83,17 @@ class Moodle():
                     return {} , 0
                 else:
                     return s.cookie_jar.filter_cookies('https://moodle.astanait.edu.kz'), 1
+
+
+    async def get_email(self):
+        async with aiohttp.ClientSession('https://moodle.astanait.edu.kz') as s:
+            async with s.get("/user/profile.php", cookies=self.user.cookies) as req:
+                text = await req.read()
+                soup = BeautifulSoup(text, 'html.parser')
+                profile_tree = soup.find('div', {'class': 'profile_tree'})
+                contentnode = profile_tree.find('li', {'class': 'contentnode'})
+                email = contentnode.find('a').text
+                return email
 
 
     async def check_cookies(self):
@@ -339,11 +352,11 @@ class Moodle():
 
 
     # ok
-    async def get_users_by_field(self):
+    async def get_users_by_field(self, value: str, field: str = "email"):
         f = 'core_user_get_users_by_field'
         params = {
-            'field': 'email',
-            'values[0]': self.user.barcode + '@astanait.edu.kz'
+            'field': field,
+            'values[0]': value
         }
         return await self.make_request(f, params=params)
 
@@ -351,9 +364,11 @@ class Moodle():
     # ok
     async def get_courses(self):
         f = 'core_enrol_get_users_courses'
-        id = (await self.get_users_by_field())[0]['id']
+        if self.user.id is None:
+            value = await self.get_email()
+            self.user.id = (await self.get_users_by_field(value))[0]['id']
         params = {
-            'userid': id
+            'userid': self.user.id 
         }
         return await self.make_request(f, params=params)
 
@@ -362,7 +377,8 @@ class Moodle():
     async def get_grades(self, courseid):
         f = 'gradereport_user_get_grades_table'
         if self.user.id is None:
-            self.user.id = (await self.get_users_by_field())[0]['id']
+            value = await self.get_email()
+            self.user.id = (await self.get_users_by_field(value))[0]['id']
         params = {
             'userid': self.user.id,
             'courseid': courseid
