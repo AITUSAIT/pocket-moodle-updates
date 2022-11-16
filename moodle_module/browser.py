@@ -67,25 +67,24 @@ class Browser:
                     '//*[@id="lightbox"]/div[3]/div/div[2]/div/div[3]/div[1]/div/label/span'
                 )))
             except:
-                passwordError = self.driver.find_element(By.XPATH, '//*[@id="passwordError"]')
-                if passwordError.is_displayed():
-                    if not await aioredis.check_if_msg(user_id):
-                        await send(user_id, 'Invalid login or password\n/register\_moodle to fix')
-                    self.driver.close()
-                    self.driver.quit()
-                    return {}, False, 'Invalid Login (passwd)'
-                proofError = self.driver.find_element(By.XPATH, '//*[@id="idSubmit_ProofUp_Redirect"]')
-                if proofError.is_displayed():
-                    if not await aioredis.check_if_msg(user_id):
-                        await send(user_id, 'Need proof while logginng in\nContact @dake\_duck')
-                    self.driver.close()
-                    self.driver.quit()
-                    return {}, False, 'Invalid Login (proof)'
-            else:
-                self.wait.until(voel((
-                    By.XPATH,
-                    '//*[@id="idSIButton9"]'
-                ))).click()
+                try:
+                    passwordError = self.driver.find_element(By.XPATH, '//*[@id="passwordError"]')
+                    if passwordError.is_displayed():
+                        if not await aioredis.check_if_msg(user_id):
+                            await send(user_id, 'Invalid login or password\n/register\_moodle to fix')
+                        self.driver.close()
+                        self.driver.quit()
+                        return {}, False, 'Invalid Login (passwd)'
+                except:
+                    self.driver.find_element(By.XPATH, '//*[@id="idSubmit_ProofUp_Redirect"]').click()
+                    self.wait.until(voel((
+                        By.XPATH,
+                        '//*[@id="CancelLinkButton"]'
+                    ))).click()
+            self.wait.until(voel((
+                By.XPATH,
+                '//*[@id="idSIButton9"]'
+            ))).click()
             
             self.wait.until(voel((
                 By.XPATH,
