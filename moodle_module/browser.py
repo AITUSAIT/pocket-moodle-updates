@@ -164,6 +164,6 @@ class Browser:
             await aioredis.set_key(user_id, 'gpa', data['gpa'])
             return 1
         except Exception as exc:
-            logger.error(f"{user_id} {exc}", exc_info=True)
+            # logger.error(f"{user_id} {exc}", exc_info=True)
             return -1
     
