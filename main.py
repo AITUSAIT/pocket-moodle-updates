@@ -7,12 +7,13 @@ import aiohttp
 from config import (MAIN_HOST, REDIS_DB, REDIS_HOST, REDIS_PASSWD, REDIS_PORT,
                     REDIS_USER, token)
 from functions import aioredis
+from functions.functions import clear_MD
 from functions.logger import logger
 from functions.moodle import check_updates, send
 from server.module import run_server
 
 
-async def run_check(user):
+async def run_check(user) -> str:
     result = await check_updates(user['user_id'])
 
     if result == 0:
@@ -25,6 +26,8 @@ async def run_check(user):
         res = 'Success'
     else:
         res = result
+        if not await aioredis.check_if_msg(user['user_id']):
+            await send(user['user_id'], clear_MD(result))
 
     return res
 
@@ -56,7 +59,13 @@ async def main():
                     else:
                         await asyncio.sleep(5)
         except Exception as exc:
-            logger.error(f"{user.get('user_id', None)} {exc}", exc_info=True)
+            params = {
+                'user_id': user['user_id'],
+                'result': 'Error',
+            }
+            async with aiohttp.ClientSession() as session:
+                async with session.post(f'{MAIN_HOST}/api/update_user?token={token}', data=params, ssl=False) as response:
+                    logger.error(f"{user.get('user_id', None)} {exc}", exc_info=True)
             await asyncio.sleep(5)
 
     await aioredis.close()

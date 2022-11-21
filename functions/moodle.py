@@ -44,10 +44,9 @@ async def check_updates(user_id):
             await aioredis.set_key(moodle.user.user_id, 'courses', moodle.user.courses)
             await aioredis.set_key(moodle.user.user_id, 'att_statistic', moodle.user.att_statistic)
             await aioredis.set_key(moodle.user.user_id, 'ignore', '0')
-            await aioredis.set_key(moodle.user.user_id, 'new_user', '0')
             del user
             del moodle
-            return 'Success'
+            return 1
         else:
             msg = user.msg
             del user

@@ -49,8 +49,6 @@ class Browser:
             except:
                 usernameError = self.driver.find_element(By.XPATH, '//*[@id="usernameError"]')
                 if usernameError.is_displayed():
-                    if not await aioredis.check_if_msg(user_id):
-                        await send(user_id, 'Invalid login or password\n/register\_moodle to fix')
                     self.driver.close()
                     self.driver.quit()
                     return {}, False, 'Invalid Login (barcode)'
@@ -70,8 +68,6 @@ class Browser:
                 try:
                     passwordError = self.driver.find_element(By.XPATH, '//*[@id="passwordError"]')
                     if passwordError.is_displayed():
-                        if not await aioredis.check_if_msg(user_id):
-                            await send(user_id, 'Invalid login or password\n/register\_moodle to fix')
                         self.driver.close()
                         self.driver.quit()
                         return {}, False, 'Invalid Login (passwd)'
