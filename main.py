@@ -41,9 +41,10 @@ async def main():
         REDIS_DB
     )
     while 1:
+        timeout = aiohttp.ClientTimeout(total=60)
         user = {}
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.get(f'{MAIN_HOST}/api/get_user?token={token}', ssl=False) as response:
                     if response.status == 200:
                         data = await response.json()
@@ -63,7 +64,7 @@ async def main():
                 'user_id': user['user_id'],
                 'result': 'Error',
             }
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.post(f'{MAIN_HOST}/api/update_user?token={token}', data=params, ssl=False) as response:
                     logger.error(f"{user.get('user_id', None)} {exc}", exc_info=True)
             await asyncio.sleep(5)

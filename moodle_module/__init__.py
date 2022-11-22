@@ -97,7 +97,8 @@ class Moodle():
 
 
     async def check_cookies(self):
-        async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', cookies=self.user.cookies) as session:
+        timeout = aiohttp.ClientTimeout(total=60)
+        async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', timeout=timeout, cookies=self.user.cookies) as session:
             async with session.get("/login/index.php", timeout=15) as request:
                 rText = await request.read()
                 soup = BeautifulSoup(rText.decode('utf-8'), 'html.parser')
@@ -108,7 +109,8 @@ class Moodle():
 
 
     async def get_and_set_token(self):
-        async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', cookies=self.user.cookies) as session:
+        timeout = aiohttp.ClientTimeout(total=60)
+        async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', timeout=timeout, cookies=self.user.cookies) as session:
             async with session.get("/user/managetoken.php", timeout=15) as request:
                 rText = await request.read()
                 soup = BeautifulSoup(rText.decode('utf-8'), 'html.parser')
@@ -125,7 +127,8 @@ class Moodle():
         args = {'moodlewsrestformat': 'json', 'wstoken': token, 'wsfunction': function}
         if params:
             args.update(params)
-        async with aiohttp.ClientSession() as session:
+        timeout = aiohttp.ClientTimeout(total=60)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.get(self.host + end_point, params=args) as r:
                 try:
                     res = await r.json()
@@ -323,7 +326,8 @@ class Moodle():
 
     async def get_attendance(self, course_id):
         try:
-            async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', cookies=self.user.cookies) as s:
+            timeout = aiohttp.ClientTimeout(total=60)
+            async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', timeout=timeout, cookies=self.user.cookies) as s:
                 async with s.get(f'/course/view.php?id={course_id}', timeout=15) as request:
                     text = await request.read()
                     soup = BeautifulSoup(text, 'html.parser')
