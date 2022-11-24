@@ -1,7 +1,7 @@
 version: '3.4'
 
 services:
-  memory: 512m
+  memory: 1g
   pocketmoodleupdates:
     image: pocketmoodleupdates
     environment: 
