@@ -372,7 +372,7 @@ class Moodle():
             for month in months:
                 if not str(month) in calendar[str(year)]:
                     calendar[str(year)][str(month)] = {}
-                cal = await self.get_calendar(year, month)
+                cal = await self.get_calendar_(year, month)
                 for week in cal['weeks']:
                     for day in week['days']:
                         if not str(day['mday']) in calendar[str(year)][str(month)]:
@@ -436,7 +436,7 @@ class Moodle():
 
 
     # ok
-    async def get_calendar(self, year: int, month: int):
+    async def get_calendar_(self, year: int, month: int):
         f = 'core_calendar_get_calendar_monthly_view'
         params = {
             'year': year,
