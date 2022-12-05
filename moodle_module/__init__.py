@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import os
 import re
+from time import mktime
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -355,6 +356,38 @@ class Moodle():
             ...
 
 
+    async def get_calendar(self) -> dict:
+        calendar = {}
+
+        year = datetime.now().year
+        month = datetime.now().month
+        next_year = (datetime.now() + timedelta(weeks=2)).year
+        next_month = (datetime.now() + timedelta(weeks=2)).month
+        years = set([year, next_year])
+        months = set([month, next_month])
+
+        for year in years:
+            if not str(year) in calendar:
+                calendar[str(year)] = {}
+            for month in months:
+                if not str(month) in calendar[str(year)]:
+                    calendar[str(year)][str(month)] = {}
+                cal = await self.get_calendar(year, month)
+                for week in cal['weeks']:
+                    for day in week['days']:
+                        if not str(day['mday']) in calendar[str(year)][str(month)]:
+                            calendar[str(year)][str(month)][day['mday']] = {'events': [], 'week_day': day['wday']}
+
+                        for event in day['events']:
+                            if 'Attendance' in event['name']:
+                                new_event = {
+                                    'course': event['course'],
+                                    'time_start': str(int(mktime((datetime.utcfromtimestamp(event['timestart']) + timedelta(hours=6)).timetuple()))),
+                                    'time_duration': event['timeduration']
+                                }
+                                calendar[str(year)][str(month)][day['mday']]['events'].append(new_event)
+        return calendar
+
     # ok
     async def get_users_by_field(self, value: str, field: str = "email"):
         f = 'core_user_get_users_by_field'
@@ -397,6 +430,26 @@ class Moodle():
 
 
     # bad
-    async def get_att_bad(self):
+    async def get_att(self):
         f = 'mod_attendance_get_sessions'
         return await self.make_request(f, token=self.user.token_att, end_point='mod/attendance/externallib.php')
+
+
+    # ok
+    async def get_calendar(self, year: int, month: int):
+        f = 'core_calendar_get_calendar_monthly_view'
+        params = {
+            'year': year,
+            'month': month
+        }
+        return await self.make_request(f, token=self.user.token_att, params=params)
+    
+
+    # ok
+    async def get_posts(self):
+        f = 'mod_forum_get_discussion_posts'
+        params = {
+            'sortby': 'id',
+            'discussionid': 600
+        }
+        return await self.make_request(f, token=self.user.token_att, params=params)

@@ -17,7 +17,9 @@ RUN apt-get update -y && apt-get upgrade -y && \
     mv chromedriver /usr/bin/chromedriver && \
     chmod +x /usr/bin/chromedriver && \
     ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && \
-    dpkg-reconfigure --frontend noninteractive tzdata
+    dpkg-reconfigure --frontend noninteractive tzdata \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 
 WORKDIR /pocket-moodle-updates
