@@ -380,7 +380,7 @@ class Moodle():
 
                         for event in day['events']:
                             try:
-                                if 'Attendance' in event['name']:
+                                if 'attendance' in str(event['name']).lower():
                                     new_event = {
                                         'course': event.get('course', {'fullname':event['name']}),
                                         'time_start': str(int(mktime((datetime.utcfromtimestamp(event['timestart']) + timedelta(hours=6)).timetuple()))),
