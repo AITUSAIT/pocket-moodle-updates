@@ -379,13 +379,16 @@ class Moodle():
                             calendar[str(year)][str(month)][day['mday']] = {'events': [], 'week_day': day['wday']}
 
                         for event in day['events']:
-                            if 'Attendance' in event['name']:
-                                new_event = {
-                                    'course': event['course'],
-                                    'time_start': str(int(mktime((datetime.utcfromtimestamp(event['timestart']) + timedelta(hours=6)).timetuple()))),
-                                    'time_duration': event['timeduration']
-                                }
-                                calendar[str(year)][str(month)][day['mday']]['events'].append(new_event)
+                            try:
+                                if 'Attendance' in event['name']:
+                                    new_event = {
+                                        'course': event.get('course', {'fullname':event['name']}),
+                                        'time_start': str(int(mktime((datetime.utcfromtimestamp(event['timestart']) + timedelta(hours=6)).timetuple()))),
+                                        'time_duration': event['timeduration']
+                                    }
+                                    calendar[str(year)][str(month)][day['mday']]['events'].append(new_event)
+                            except:
+                                ...
         return calendar
 
     # ok
