@@ -25,5 +25,7 @@ chrome_options = [
     "--disable-dev-shm-usage", "--disable-crash-reporter",
     "--log-level=3", "--disable-extensions",
     "--disable-in-process-stack-traces", "--disable-logging",
-    "--output=/dev/null"
+    "--output=/dev/null",
+    "--disable-features=Translate",
+    "--force-device-scale-factor=1"
     ]

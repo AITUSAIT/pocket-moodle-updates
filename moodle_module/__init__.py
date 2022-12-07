@@ -18,11 +18,13 @@ class UserType:
 
         self.token = None
         self.token_att = None
+        self.token_du = None
         self.cookies = None
 
         self.barcode = None
         self.passwd = None
 
+        self.curriculum = None
         self.courses = None
         self.gpa = None
         self.att_statistic = None
@@ -51,7 +53,7 @@ class Moodle():
             if str(self.user.barcode).isdigit():
                 if int(self.user.barcode) >= 210000:
                     browser = Browser()
-                    self.user.cookies, self.user.login_status, self.user.msg = await browser.get_cookies_moodle(self.user.user_id, self.user.barcode, self.user.passwd)
+                    self.user.cookies, self.user.login_status, self.user.msg, self.user.token_du = await browser.get_cookies_moodle(self.user.user_id, self.user.barcode, self.user.passwd)
                 elif int(self.user.barcode) < 210000:
                     self.user.cookies, self.user.login_status = await self.auth_moodle()
                     if self.user.login_status:
@@ -60,7 +62,7 @@ class Moodle():
                         self.user.msg = 'Invalid login or password'
             else:    
                 browser = Browser()
-                self.user.cookies, self.user.login_status, self.user.msg = await browser.get_cookies_moodle(self.user.user_id, self.user.barcode, self.user.passwd)
+                self.user.cookies, self.user.login_status, self.user.msg, self.user.token_du = await browser.get_cookies_moodle(self.user.user_id, self.user.barcode, self.user.passwd)
         else:
             self.user.login_status = True
 
@@ -122,21 +124,22 @@ class Moodle():
                         self.user.token = tds_0[i].text
 
 
-    async def make_request(self, function, token=None, params=None, end_point='webservice/rest/server.php/'):
+    async def make_request(self, function=None, token=None, params=None, headers=None, is_du=False, host='https://moodle.astanait.edu.kz', end_point='/webservice/rest/server.php/'):
         if not token:
             token = self.user.token
-        args = {'moodlewsrestformat': 'json', 'wstoken': token, 'wsfunction': function}
-        if params:
-            args.update(params)
+        if is_du:
+            args = params
+        else:
+            args = {'moodlewsrestformat': 'json', 'wstoken': token, 'wsfunction': function}
+            if params:
+                args.update(params)
         timeout = aiohttp.ClientTimeout(total=60)
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            async with session.get(self.host + end_point, params=args) as r:
-                try:
-                    res = await r.json()
-                except:
-                    return await r.read()
-                else:
-                    return res
+        async with aiohttp.ClientSession(host, timeout=timeout, headers=headers) as session:
+            if args:
+                r = await session.get(end_point, params=args)
+            else:
+                r = await session.get(end_point)
+            return await r.json()
 
 
     async def get_active_courses_ids(self):
@@ -325,7 +328,46 @@ class Moodle():
                 self.user.att_statistic[text] = int(c1_arr[j].getText())
 
 
-    async def get_attendance(self, course_id):
+    async def get_attendance(self, courses_grades, course_id):
+        try:
+            for course_grades in courses_grades:
+                if 'tables' not in course_grades:
+                    continue
+                if course_id != course_grades['tables'][0]['courseid']:
+                    continue
+                for grade in course_grades['tables'][0]['tabledata']:
+                    if grade.__class__ is list or len(grade) in [0,2]:
+                        continue
+                    name = replace_grade_name(BeautifulSoup(grade['itemname']['content'], 'lxml').text)
+                    if 'attendance' != name.lower():
+                        continue
+                    att_id = BeautifulSoup(grade['itemname']['content'], 'lxml').find('a')['href'].split('=')[-1]
+
+                    href = f'/mod/attendance/view.php?id={att_id}&view=5'
+                    timeout = aiohttp.ClientTimeout(total=60)
+                    async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', timeout=timeout, cookies=self.user.cookies) as s:
+                        async with s.get(href, timeout=15) as request:
+                            if os.getenv('ATT_STATE') == "1":
+                                os.environ["ATT_STATE"] = "0"
+                                await self.get_att_stat(s, att_id)
+                            text = await request.text()
+                            soup2 = BeautifulSoup(text, 'html.parser')
+                            table = soup2.find('table', {'class':'attlist'})
+                            c0_arr = table.find_all('td', {'class':'cell c0'})
+                            c1_arr = table.find_all('td', {'class':'cell c1 lastcol'})
+
+                            self.user.courses[str(course_id)]['attendance'] = {}
+                            for j in range(0, len(c0_arr)):
+                                text = str(c0_arr[j].getText().replace(':', ''))
+                                self.user.courses[str(course_id)]['attendance'][text] = c1_arr[j].getText()
+                        await s.close()
+        except Exception as exc:
+            # print('https://moodle.astanait.edu.kz'+href)
+            # print(exc)
+            ...
+
+
+    async def get_attendance_old(self, course_id):
         try:
             timeout = aiohttp.ClientTimeout(total=60)
             async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', timeout=timeout, cookies=self.user.cookies) as s:
@@ -352,8 +394,8 @@ class Moodle():
                         for j in range(0, len(c0_arr)):
                             text = str(c0_arr[j].getText().replace(':', ''))
                             self.user.courses[str(course_id)]['attendance'][text] = c1_arr[j].getText()
-        except:
-            ...
+        except Exception as exc:
+            print(exc)
 
 
     async def get_calendar(self) -> dict:
@@ -390,6 +432,38 @@ class Moodle():
                             except:
                                 ...
         return calendar
+
+
+    async def set_gpa(self, gpa):
+        avg_gpa = gpa['averageGpa']
+        all_credits_sum = gpa['allCreditsSum']
+        gpa_dict = {}
+        for key, val in gpa['gpaOfTrimesters'].items():
+            if key == "0":
+                gpa_dict[f"Summer Trimester GPA"] = val
+            else:
+                gpa_dict[f"Trimester {key} GPA"] = val
+        gpa_dict['Average performance GPA'] = avg_gpa
+
+        self.user.gpa = gpa_dict
+            
+
+    async def set_curriculum(self, curriculum):
+        self.user.curriculum = {
+            '1': {'1': {}, '2': {}, '3': {}},
+            '2': {'1': {}, '2': {}, '3': {}},
+            '3': {'1': {}, '2': {}, '3': {}},
+        }
+        for component in curriculum:
+            id = str(component['id'])
+            year = str(component['curriculum']['year'])
+            trimester = str(component['curriculum']['numberOfTrimester'])
+            discipline = {
+                'id': id,
+                'name': component['curriculum']['discipline']['titleEn'],
+                'credits': component['curriculum']['discipline']['volumeCredits'],
+            }
+            self.user.curriculum[year][trimester][id] = discipline
 
     # ok
     async def get_users_by_field(self, value: str, field: str = "email"):
@@ -448,7 +522,7 @@ class Moodle():
         return await self.make_request(f, token=self.user.token_att, params=params)
     
 
-    # ok
+    # ok-bad
     async def get_posts(self):
         f = 'mod_forum_get_discussion_posts'
         params = {
@@ -456,3 +530,46 @@ class Moodle():
             'discussionid': 600
         }
         return await self.make_request(f, token=self.user.token_att, params=params)
+
+
+    # ok
+    async def get_gpa(self):
+        headers = {
+            "Authorization": f"Bearer {self.user.token_du}",
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Connection': 'keep-alive',
+            'Origin': 'https://du.astanait.edu.kz',
+            'Referer': 'https://du.astanait.edu.kz/',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-site',
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+            'sec-ch-ua': '"Not?A_Brand";v="8", "Chromium";v="108", "Google Chrome";v="108"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Linux"',
+        }
+        return await self.make_request(headers=headers, is_du=True, host="https://du.astanait.edu.kz:8765", end_point="/astanait-office-module/api/v1/academic-department/assessment-report/transcript-gpa-for-student")
+
+    # ok
+    async def get_curriculum(self, course_num: int):
+        headers = {
+            "Authorization": f"Bearer {self.user.token_du}",
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Connection': 'keep-alive',
+            'Origin': 'https://du.astanait.edu.kz',
+            'Referer': 'https://du.astanait.edu.kz/',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-site',
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+            'sec-ch-ua': '"Not?A_Brand";v="8", "Chromium";v="108", "Google Chrome";v="108"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Linux"',
+        }
+        
+        params = {
+            'course': course_num
+        }
+        return await self.make_request(headers=headers, params=params, is_du=True, host="https://du.astanait.edu.kz:8765", end_point="/astanait-office-module/api/v1/student-discipline-choose/get-student-IC-by-course-for-student")

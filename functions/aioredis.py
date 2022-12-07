@@ -51,8 +51,10 @@ async def get_user(user_id):
 
     user.cookies = json.loads(data.get('cookies', '{}'))
     user.token = data.get('token', None)
+    user.token_du = None
     user.token_att = data.get('token_att', None)
 
+    user.curriculum = None
     user.courses = json.loads(data.get('courses', '{}'))
     user.gpa = json.loads(data.get('gpa', '{}'))
     user.att_statistic = json.loads(data.get('att_statistic', '{}'))
