@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime, timedelta
 from http.cookies import SimpleCookie
 from pprint import pprint
 import time
@@ -27,32 +28,13 @@ async def check_updates(user_id):
 
     if user.is_registered_moodle:
         moodle = Moodle(user)
-        # await moodle.check()
-        # print('>>>', "moodle.check()", time.time() - start, '\n')
-        moodle.user.token_du = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJBc3RhbmFpdC5lZHUua3ogY2xpZW50Iiwic3ViIjoiNjU0MSIsImlzcyI6IkFzdGFuYWl0LmVkdS5reiBzZXJ2ZXIiLCJleHAiOjE2NzA0Mzg3MjYsImlhdCI6MTY3MDQzMTUyNiwiQ2xpZW50IGlwIjoiMTcyLjE5LjAuMTIifQ.6CM7CfToq9vqXiL6HJmQHhbJZgyGW37TMOGlXljLlJbnQtsxVOcRI6Ln8VnM_o8Q4lxmsypqEb5coi5c2xGKFA"
-        moodle.user.login_status = True
-        moodle.user.token = True
-        if moodle.user.login_status and moodle.user.token:
-            if moodle.user.token_du:
-                await moodle.set_gpa(await moodle.get_gpa())
+        await moodle.check()
 
-                curriculum = await moodle.get_curriculum(1)
-                curriculum.extend(await moodle.get_curriculum(2))
-                curriculum.extend(await moodle.get_curriculum(3))
-                moodle.user.curriculum = {
-                    '1': {'1': {}, '2': {}, '3': {}},
-                    '2': {'1': {}, '2': {}, '3': {}},
-                    '3': {'1': {}, '2': {}, '3': {}},
-                }
-                for id, component in enumerate(curriculum):
-                    year = str(component['curriculum']['year'])
-                    trimester = str(component['curriculum']['numberOfTrimester'])
-                    discipline = {
-                        'id': str(component['id']),
-                        'name': component['curriculum']['discipline']['titleEn'],
-                        'credits': component['curriculum']['discipline']['volumeCredits'],
-                    }
-                    moodle.user.curriculum[year][trimester][id] = discipline
+        if moodle.user.login_status and moodle.user.token:
+            courses = await moodle.get_courses()
+            active_courses_ids = await moodle.get_active_courses_ids()
+            for course in courses:
+                ...
                 
 
             del user

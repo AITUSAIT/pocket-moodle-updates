@@ -142,19 +142,14 @@ class Moodle():
             return await r.json()
 
 
-    async def get_active_courses_ids(self):
-        async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', cookies=self.user.cookies) as s:
-            async with s.get('/', timeout=15) as request:
-                text = await request.read()
-                soup = BeautifulSoup(text.decode('utf-8'), 'html.parser')
-                profile_button = soup.find("a", {"data-title": "profile,moodle"})
-                url_courses = profile_button.get("href") + '&showallcourses=1'
-                url_courses = url_courses.replace('https://moodle.astanait.edu.kz', '')
-
-                a = soup.find_all("a", {"data-type": "20"})
-                active_courses_ids = []
-                for course in a:
-                    active_courses_ids.append(int(course.get("data-key")))
+    async def get_active_courses_ids(self, courses) -> tuple[int]:
+        active_courses_ids = []
+        for course in courses:
+            now = datetime.now()
+            start_date = datetime.utcfromtimestamp(course['startdate']) + timedelta(hours=6)
+            end_date = datetime.utcfromtimestamp(course['enddate']) + timedelta(hours=6)
+            if now > start_date and now < end_date:
+                active_courses_ids.append(course['id'])
         return active_courses_ids
     
     

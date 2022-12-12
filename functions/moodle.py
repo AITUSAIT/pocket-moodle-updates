@@ -15,7 +15,7 @@ async def check_updates(user_id):
 
         if moodle.user.login_status and moodle.user.token:
             courses = await moodle.get_courses()
-            active_courses_ids = await moodle.get_active_courses_ids()
+            active_courses_ids = await moodle.get_active_courses_ids(courses)
             course_ids = list(course['id'] for course in courses)
 
             courses_ass = (await moodle.get_assignments())['courses']
