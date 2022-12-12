@@ -479,8 +479,11 @@ class Moodle():
     async def get_courses(self):
         f = 'core_enrol_get_users_courses'
         if self.user.id is None:
-            value = await self.get_email()
-            self.user.id = (await self.get_users_by_field(value))[0]['id']
+            try:
+                self.user.id = (await self.get_users_by_field(self.user.barcode+"@astanait.edu.kz"))[0]['id']
+            except:
+                value = await self.get_email()
+                self.user.id = (await self.get_users_by_field(value))[0]['id']
         params = {
             'userid': self.user.id 
         }
@@ -491,8 +494,11 @@ class Moodle():
     async def get_grades(self, courseid):
         f = 'gradereport_user_get_grades_table'
         if self.user.id is None:
-            value = await self.get_email()
-            self.user.id = (await self.get_users_by_field(value))[0]['id']
+            try:
+                self.user.id = (await self.get_users_by_field(self.user.barcode+"@astanait.edu.kz"))[0]['id']
+            except:
+                value = await self.get_email()
+                self.user.id = (await self.get_users_by_field(value))[0]['id']
         params = {
             'userid': self.user.id,
             'courseid': courseid
