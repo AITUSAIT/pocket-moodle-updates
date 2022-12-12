@@ -1,17 +1,11 @@
-import json
-from asyncio import sleep
-
-from bs4 import BeautifulSoup
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.expected_conditions import \
-    visibility_of_element_located as voel, invisibility_of_element_located as ioel, invisibility_of_element as ioe
+    visibility_of_element_located as voel
 from selenium.webdriver.support.ui import WebDriverWait
 
 from config import chrome_options
-from functions import aioredis
-from functions.bot import send
 from functions.logger import logger
 
 
