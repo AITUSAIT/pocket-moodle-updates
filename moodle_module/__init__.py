@@ -393,42 +393,6 @@ class Moodle():
             print(exc)
 
 
-    async def get_calendar(self) -> dict:
-        calendar = {}
-
-        year = datetime.now().year
-        month = datetime.now().month
-        next_year = (datetime.now() + timedelta(weeks=2)).year
-        next_month = (datetime.now() + timedelta(weeks=2)).month
-        years = set([year, next_year])
-        months = set([month, next_month])
-
-        for year in years:
-            if not str(year) in calendar:
-                calendar[str(year)] = {}
-            for month in months:
-                if not str(month) in calendar[str(year)]:
-                    calendar[str(year)][str(month)] = {}
-                cal = await self.get_calendar_(year, month)
-                for week in cal['weeks']:
-                    for day in week['days']:
-                        if not str(day['mday']) in calendar[str(year)][str(month)]:
-                            calendar[str(year)][str(month)][day['mday']] = {'events': [], 'week_day': day['wday']}
-
-                        for event in day['events']:
-                            try:
-                                if 'attendance' in str(event['name']).lower():
-                                    new_event = {
-                                        'course': event.get('course', {'fullname':event['name']}),
-                                        'time_start': str(int(mktime((datetime.utcfromtimestamp(event['timestart']) + timedelta(hours=6)).timetuple()))),
-                                        'time_duration': event['timeduration']
-                                    }
-                                    calendar[str(year)][str(month)][day['mday']]['events'].append(new_event)
-                            except:
-                                ...
-        return calendar
-
-
     async def set_gpa(self, gpa):
         avg_gpa = gpa['averageGpa']
         all_credits_sum = gpa['allCreditsSum']
@@ -512,16 +476,6 @@ class Moodle():
         f = 'mod_attendance_get_sessions'
         return await self.make_request(f, token=self.user.token_att, end_point='mod/attendance/externallib.php')
 
-
-    # ok
-    async def get_calendar_(self, year: int, month: int):
-        f = 'core_calendar_get_calendar_monthly_view'
-        params = {
-            'year': year,
-            'month': month
-        }
-        return await self.make_request(f, token=self.user.token_att, params=params)
-    
 
     # ok-bad
     async def get_posts(self):

@@ -27,8 +27,6 @@ async def check_updates(user_id):
             new_grades, updated_grades = await moodle.set_grades(courses_grades)
             updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass, active_courses_ids)
 
-            calendar = await moodle.get_calendar()
-
             if moodle.user.token_du:
                 try:
                     await moodle.set_gpa(await moodle.get_gpa())
@@ -61,7 +59,6 @@ async def check_updates(user_id):
             await aioredis.set_key(moodle.user.user_id, 'cookies', moodle.user.cookies)
             await aioredis.set_key(moodle.user.user_id, 'courses', moodle.user.courses)
             await aioredis.set_key(moodle.user.user_id, 'att_statistic', moodle.user.att_statistic)
-            await aioredis.set_key(moodle.user.user_id, 'calendar', calendar)
             await aioredis.set_key(moodle.user.user_id, 'ignore', '0')
             del user
             del moodle

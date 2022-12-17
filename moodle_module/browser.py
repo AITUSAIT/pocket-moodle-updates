@@ -82,7 +82,10 @@ class Browser:
             )))
 
             cookies = self.get_cookies_data()
-            token = self.get_token_du()
+            try:
+                token = self.get_token_du()
+            except:
+                token = None
             self.driver.close()
             self.driver.quit()
             return cookies, True, '', token

@@ -67,7 +67,7 @@ async def check_updates(user_id):
                 await aioredis.set_key(moodle.user.user_id, 'gpa', moodle.user.gpa)
 
 
-            if moodle.user.is_sub_grades and not moodle.user.is_ignore and moodle.user.is_active_sub:
+            if not moodle.user.is_ignore and moodle.user.is_active_sub:
                 for items in [new_grades, updated_grades, updated_deadlines, new_deadlines, upcoming_deadlines]:
                     for item in items:
                         if len(item) < 20:
