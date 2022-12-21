@@ -227,7 +227,7 @@ class Moodle():
         return [new_grades, updated_grades]
     
 
-    async def set_assigns(self, courses_assigns, active_courses_ids):
+    async def set_assigns(self, courses_assigns, courses_ids):
         course_state1 = 0
         course_state2 = 0
         course_state3 = 0
@@ -245,7 +245,7 @@ class Moodle():
             course_name = clear_MD(course['name'])
             url_to_course = f"/course/view.php?id={course['id']}"
 
-            if int(course['id']) in active_courses_ids:
+            if int(course['id']) in courses_ids:
                 for assign in course_assigns['assignments']:
                     assignment_id = str(assign['cmid'])
                     assignment_name = assign['name']

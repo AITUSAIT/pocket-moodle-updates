@@ -22,10 +22,10 @@ async def check_updates(user_id):
             courses_grades = await asyncio.gather(*[moodle.get_grades(course_id) for course_id in course_ids])
 
             await moodle.add_new_courses(courses, active_courses_ids)
-            await asyncio.gather(*[moodle.get_attendance(courses_grades, course_id) for course_id in active_courses_ids])
+            await asyncio.gather(*[moodle.get_attendance(courses_grades, course_id) for course_id in course_ids])
 
             new_grades, updated_grades = await moodle.set_grades(courses_grades)
-            updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass, active_courses_ids)
+            updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass, course_ids)
 
             if moodle.user.token_du:
                 try:
@@ -48,8 +48,7 @@ async def check_updates(user_id):
                         if len(item) < 20:
                             continue
                         await send(moodle.user.user_id, item)
-            
-            if moodle.user.is_ignore:
+            else:
                 await send(moodle.user.user_id, 'Your courses are *ready*\!')
 
             if moodle.user.cookies.__class__ is SimpleCookie:
