@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 import threading
 
@@ -11,10 +12,14 @@ from functions.functions import clear_MD
 from functions.logger import logger
 from functions.moodle import check_updates, send
 from server.module import run_server
+from itertools import cycle
+
+def get_proxies():
+    return cycle(json.loads(asyncio.run(aioredis.redis1.hget('servers', token)))['proxy_list'])
 
 
-async def run_check(user) -> str:
-    result = await check_updates(user['user_id'])
+async def run_check(user, proxy_dict: dict) -> str:
+    result = await check_updates(user['user_id'], proxy_dict)
 
     if result == 0:
         res = 'Invalid Login'
@@ -50,7 +55,7 @@ async def main():
                         data = await response.json()
                         user = data['user']
                         os.environ["ATT_STATE"] = "1"
-                        result = await run_check(user)
+                        result = await run_check(user, next(proxies))
                         params = {
                             'user_id': user['user_id'],
                             'result': result,
@@ -73,6 +78,7 @@ async def main():
     await aioredis.close()
 
 
-threading.Thread(target=run_server, args=(), daemon=True).start()
-
-asyncio.run(main())
+if __name__ == "__main__":
+    proxies = get_proxies()
+    threading.Thread(target=run_server, args=(), daemon=True).start()
+    asyncio.run(main())

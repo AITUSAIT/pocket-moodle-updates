@@ -7,25 +7,19 @@ from config import (REDIS_DB, REDIS_HOST, REDIS_PASSWD, REDIS_PORT,
 from functions import aioredis
 from functions.bot import send
 from functions.functions import timeit
+from main import get_proxies
 from moodle_module import Moodle, UserType
 
 
 @timeit
-async def check_updates(user_id):
+async def check_updates(user_id, proxy_dict: dict):
     start = time.time()
     
-    await aioredis.start_redis(
-        REDIS_USER,
-        REDIS_PASSWD,
-        REDIS_HOST,
-        REDIS_PORT,
-        REDIS_DB
-    )
     user: UserType = await aioredis.get_user(user_id)
     print('>>>', "get_user", time.time() - start, '\n')
 
     if user.is_registered_moodle:
-        moodle = Moodle(user)
+        moodle = Moodle(user, proxy_dict)
         await moodle.check()
         print('>>>', "moodle.check()", time.time() - start, '\n')
 
@@ -51,7 +45,10 @@ async def check_updates(user_id):
             print('>>>', "set_grades_and_assigns", time.time() - start, '\n')
 
             if moodle.user.token_du:
-                await moodle.set_gpa(await moodle.get_gpa())
+                try:
+                    await moodle.set_gpa(await moodle.get_gpa())
+                except:
+                    ...
                 print('>>>', "get_gpa", time.time() - start, '\n')
 
                 curriculum = await moodle.get_curriculum(1)
@@ -61,7 +58,8 @@ async def check_updates(user_id):
                 
                 print('>>>', "get_curriculum", time.time() - start, '\n')
                 await aioredis.set_key(moodle.user.user_id, 'curriculum', moodle.user.curriculum)
-                await aioredis.set_key(moodle.user.user_id, 'gpa', moodle.user.gpa)
+                if moodle.user.gpa:
+                    await aioredis.set_key(moodle.user.user_id, 'gpa', moodle.user.gpa)
 
 
             if not moodle.user.is_ignore:
@@ -93,5 +91,13 @@ async def check_updates(user_id):
             return msg
 
 
-asyncio.run(check_updates(626591599))
+asyncio.run(aioredis.start_redis(
+    REDIS_USER,
+    REDIS_PASSWD,
+    REDIS_HOST,
+    REDIS_PORT,
+    REDIS_DB
+))
+proxies = get_proxies()
+asyncio.run(check_updates(626591599, next(proxies)))
 # asyncio.run(check_updates(448066464))
