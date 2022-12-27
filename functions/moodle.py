@@ -45,9 +45,8 @@ async def check_updates(user_id):
             if not moodle.user.is_ignore:
                 for items in [new_grades, updated_grades, updated_deadlines, new_deadlines, upcoming_deadlines]:
                     for item in items:
-                        if len(item) < 20:
-                            continue
-                        await send(moodle.user.user_id, item)
+                        if len(item) > 20:
+                            await send(moodle.user.user_id, item)
             else:
                 await send(moodle.user.user_id, 'Your courses are *ready*\!')
 
