@@ -18,6 +18,10 @@ def get_proxies():
     return cycle(json.loads(asyncio.run(aioredis.redis1.hget('servers', token)))['proxy_list'])
 
 
+async def a_get_proxies():
+    return cycle(json.loads( (await aioredis.redis1.hget('servers', token)) )['proxy_list'])
+
+
 async def run_check(user, proxy_dict: dict) -> str:
     result = await check_updates(user['user_id'], proxy_dict)
 
@@ -45,6 +49,7 @@ async def main():
         REDIS_PORT,
         REDIS_DB
     )
+    proxies = await a_get_proxies()
     while 1:
         timeout = aiohttp.ClientTimeout(total=60)
         user = {}
@@ -79,6 +84,5 @@ async def main():
 
 
 if __name__ == "__main__":
-    proxies = get_proxies()
     threading.Thread(target=run_server, args=(), daemon=True).start()
     asyncio.run(main())
