@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 import os
 import re
-from time import mktime
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -41,18 +40,20 @@ class UserType:
 
 
 class Moodle():
-    def __init__(self, user: UserType) -> None:
+    def __init__(self, user: UserType, proxy_dict: dict) -> None:
         self.user: UserType = user
         self.host = 'https://moodle.astanait.edu.kz/'
         self.user.msg = None
         self.user.login_status = None
+        self.proxy_dict = proxy_dict
 
 
     async def check(self):
         if await self.check_cookies() is False:
             if str(self.user.barcode).isdigit():
                 if int(self.user.barcode) >= 210000:
-                    browser = Browser()
+                    proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}"
+                    browser = Browser(proxy)
                     self.user.cookies, self.user.login_status, self.user.msg, self.user.token_du = await browser.get_cookies_moodle(self.user.user_id, self.user.barcode, self.user.passwd)
                 elif int(self.user.barcode) < 210000:
                     self.user.cookies, self.user.login_status = await self.auth_moodle()
@@ -71,8 +72,9 @@ class Moodle():
 
 
     async def auth_moodle(self):
+        proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}"
         async with aiohttp.ClientSession('https://moodle.astanait.edu.kz') as s:
-            async with s.get("/login/index.php", timeout=15) as r_1:
+            async with s.get("/login/index.php", timeout=15, proxy=proxy) as r_1:
                 text = await r_1.text()
                 pattern_auth = '<input type="hidden" name="logintoken" value="\w{32}">'
                 token = re.findall(pattern_auth, text)
@@ -80,7 +82,7 @@ class Moodle():
 
                 payload = {'anchor': '', 'logintoken': token, 'username': self.user.barcode,
                         'password': self.user.passwd, 'rememberusername': 1}
-            async with s.post("/login/index.php", data=payload, timeout=15) as r_2:
+            async with s.post("/login/index.php", data=payload, timeout=15, proxy=proxy) as r_2:
                 text = await r_2.read()
                 if "Invalid login" in str(text):
                     return {} , 0
@@ -89,8 +91,9 @@ class Moodle():
 
 
     async def get_email(self):
+        proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}"
         async with aiohttp.ClientSession('https://moodle.astanait.edu.kz') as s:
-            async with s.get("/user/profile.php", cookies=self.user.cookies) as req:
+            async with s.get("/user/profile.php", cookies=self.user.cookies, proxy=proxy) as req:
                 text = await req.read()
                 soup = BeautifulSoup(text, 'html.parser')
                 profile_tree = soup.find('div', {'class': 'profile_tree'})
@@ -101,8 +104,9 @@ class Moodle():
 
     async def check_cookies(self):
         timeout = aiohttp.ClientTimeout(total=60)
+        proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}"
         async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', timeout=timeout, cookies=self.user.cookies) as session:
-            async with session.get("/login/index.php", timeout=15) as request:
+            async with session.get("/login/index.php", timeout=15, proxy=proxy) as request:
                 rText = await request.read()
                 soup = BeautifulSoup(rText.decode('utf-8'), 'html.parser')
                 if soup.find('input', {'id': 'username'}):
@@ -113,8 +117,9 @@ class Moodle():
 
     async def get_and_set_token(self):
         timeout = aiohttp.ClientTimeout(total=60)
+        proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}"
         async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', timeout=timeout, cookies=self.user.cookies) as session:
-            async with session.get("/user/managetoken.php", timeout=15) as request:
+            async with session.get("/user/managetoken.php", timeout=15, proxy=proxy) as request:
                 rText = await request.read()
                 soup = BeautifulSoup(rText.decode('utf-8'), 'html.parser')
                 tds_0 = soup.find_all('td', {'class': 'cell c0'})
@@ -134,11 +139,12 @@ class Moodle():
             if params:
                 args.update(params)
         timeout = aiohttp.ClientTimeout(total=60)
+        proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}"
         async with aiohttp.ClientSession(host, timeout=timeout, headers=headers) as session:
             if args:
-                r = await session.get(end_point, params=args)
+                r = await session.get(end_point, params=args, proxy=proxy)
             else:
-                r = await session.get(end_point)
+                r = await session.get(end_point, proxy=proxy)
             return await r.json()
 
 

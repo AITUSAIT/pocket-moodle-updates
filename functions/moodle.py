@@ -6,11 +6,11 @@ from functions.bot import send
 from moodle_module import Moodle, UserType
 
 
-async def check_updates(user_id):
+async def check_updates(user_id, proxy_dict: dict) -> int | str:
     user: UserType = await aioredis.get_user(user_id)
 
     if user.is_registered_moodle:
-        moodle = Moodle(user)
+        moodle = Moodle(user, proxy_dict)
         await moodle.check()
 
         if moodle.user.login_status and moodle.user.token:

@@ -1,18 +1,25 @@
-from selenium.webdriver import Chrome
+import logging
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.expected_conditions import \
     visibility_of_element_located as voel
 from selenium.webdriver.support.ui import WebDriverWait
+from seleniumwire import webdriver
 
 from config import chrome_options
 from functions.logger import logger
 
 
 class Browser:
-    def __init__(self) -> None:
+    def __init__(self, proxy: str) -> None:
+        logging.getLogger('seleniumwire').setLevel(logging.ERROR)
         self.set_options()
-        self.driver = Chrome(options=self.chrome_options)
+        options = {
+            'proxy': {
+                'http': proxy,
+            }
+        }
+        self.driver = webdriver.Chrome(options=self.chrome_options, seleniumwire_options=options)
         self.wait = WebDriverWait(self.driver, 5)
 
     def set_options(self):

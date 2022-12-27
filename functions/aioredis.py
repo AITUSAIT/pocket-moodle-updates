@@ -5,11 +5,14 @@ import aioredis
 from functions.functions import decrypt
 
 redis : aioredis.Redis = None
+redis1 : aioredis.Redis = None
 
 
 async def start_redis(user, passwd, host, port, db):
     global redis
+    global redis1
     redis = await aioredis.from_url(f"redis://{user}:{passwd}@{host}:{port}/{db}", decode_responses=True)
+    redis1 = await aioredis.from_url(f"redis://{user}:{passwd}@{host}:{port}/1", decode_responses=True)
 
 
 async def set_key(key, key2, value):
