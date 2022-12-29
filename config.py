@@ -16,6 +16,9 @@ token = os.getenv('token')
 
 TOKEN = os.getenv('TOKEN')
 
+IS_PROXY = os.getenv('IS_PROXY')
+
+
 bot = Bot(token=TOKEN, parse_mode=types.ParseMode.MARKDOWN_V2)
 
 

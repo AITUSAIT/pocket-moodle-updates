@@ -42,11 +42,13 @@ async def check_updates(user_id, proxy_dict: dict) -> int | str:
                 if moodle.user.gpa:
                     await aioredis.set_key(moodle.user.user_id, 'gpa', moodle.user.gpa)
 
-            if not moodle.user.is_ignore:
+            if moodle.user.is_ignore in [0, 2]:
                 for items in [new_grades, updated_grades, updated_deadlines, new_deadlines, upcoming_deadlines]:
                     for item in items:
                         if len(item) > 20:
                             await send(moodle.user.user_id, item)
+                if moodle.user.is_ignore == 2:
+                    await send(moodle.user.user_id, 'Updated\!')
             else:
                 await send(moodle.user.user_id, 'Your courses are *ready*\!')
 

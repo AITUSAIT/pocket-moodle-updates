@@ -67,7 +67,7 @@ async def get_user(user_id):
     user.is_registered_moodle = await is_registered_moodle(user_id)
     user.is_active_sub = await is_active_sub(user_id)
 
-    user.is_ignore = bool(int(data.get('ignore', 0)))
+    user.is_ignore = int(data.get('ignore', 0))
 
     if user.is_registered_moodle:
         user.passwd = decrypt(user.passwd, user.barcode)
