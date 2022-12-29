@@ -16,14 +16,14 @@ token = os.getenv('token')
 
 TOKEN = os.getenv('TOKEN')
 
-IS_PROXY = os.getenv('IS_PROXY')
+IS_PROXY = bool(int(os.getenv('IS_PROXY')))
 
 
 bot = Bot(token=TOKEN, parse_mode=types.ParseMode.MARKDOWN_V2)
 
 
 chrome_options = [
-    '--headless',
+    # '--headless',
     '--disable-gpu', "--no-sandbox",
     "--disable-dev-shm-usage", "--disable-crash-reporter",
     "--log-level=3", "--disable-extensions",

@@ -51,7 +51,7 @@ async def main():
     )
     proxies = await a_get_proxies()
     while 1:
-        timeout = aiohttp.ClientTimeout(total=60)
+        timeout = aiohttp.ClientTimeout(total=15)
         user = {}
         try:
             async with aiohttp.ClientSession(timeout=timeout) as session:

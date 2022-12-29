@@ -18,7 +18,7 @@ class Browser:
             'proxy': {
                 'http': proxy,
             }
-        }
+        } if proxy else {}
         self.driver = webdriver.Chrome(options=self.chrome_options, seleniumwire_options=options)
         self.wait = WebDriverWait(self.driver, 5)
 

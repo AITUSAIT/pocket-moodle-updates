@@ -4,6 +4,7 @@ import re
 
 import aiohttp
 from bs4 import BeautifulSoup
+from config import IS_PROXY
 
 from functions.functions import clear_MD, get_diff_time, replace_grade_name
 
@@ -52,7 +53,7 @@ class Moodle():
         if await self.check_cookies() is False:
             if str(self.user.barcode).isdigit():
                 if int(self.user.barcode) >= 210000:
-                    proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}"
+                    proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}" if IS_PROXY else None
                     browser = Browser(proxy)
                     self.user.cookies, self.user.login_status, self.user.msg, self.user.token_du = await browser.get_cookies_moodle(self.user.user_id, self.user.barcode, self.user.passwd)
                 elif int(self.user.barcode) < 210000:
@@ -72,7 +73,7 @@ class Moodle():
 
 
     async def auth_moodle(self):
-        proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}"
+        proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}" if IS_PROXY else None
         async with aiohttp.ClientSession('https://moodle.astanait.edu.kz') as s:
             async with s.get("/login/index.php", timeout=15, proxy=proxy) as r_1:
                 text = await r_1.text()
@@ -91,7 +92,7 @@ class Moodle():
 
 
     async def get_email(self):
-        proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}"
+        proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}" if IS_PROXY else None
         async with aiohttp.ClientSession('https://moodle.astanait.edu.kz') as s:
             async with s.get("/user/profile.php", cookies=self.user.cookies, proxy=proxy) as req:
                 text = await req.read()
@@ -104,7 +105,7 @@ class Moodle():
 
     async def check_cookies(self):
         timeout = aiohttp.ClientTimeout(total=60)
-        proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}"
+        proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}" if IS_PROXY else None
         async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', timeout=timeout, cookies=self.user.cookies) as session:
             async with session.get("/login/index.php", timeout=15, proxy=proxy) as request:
                 rText = await request.read()
@@ -117,7 +118,7 @@ class Moodle():
 
     async def get_and_set_token(self):
         timeout = aiohttp.ClientTimeout(total=60)
-        proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}"
+        proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}" if IS_PROXY else None
         async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', timeout=timeout, cookies=self.user.cookies) as session:
             async with session.get("/user/managetoken.php", timeout=15, proxy=proxy) as request:
                 rText = await request.read()
@@ -139,7 +140,7 @@ class Moodle():
             if params:
                 args.update(params)
         timeout = aiohttp.ClientTimeout(total=60)
-        proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}"
+        proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}" if IS_PROXY else None
         async with aiohttp.ClientSession(host, timeout=timeout, headers=headers) as session:
             if args:
                 r = await session.get(end_point, params=args, proxy=proxy)
@@ -234,9 +235,6 @@ class Moodle():
     
 
     async def set_assigns(self, courses_assigns, courses_ids):
-        course_state1 = 0
-        course_state2 = 0
-        course_state3 = 0
         updated_deadlines = ['Updated deadlines:']
         new_deadlines = ['New deadlines:']
         upcoming_deadlines = ['Upcoming deadlines:']
@@ -247,6 +245,10 @@ class Moodle():
 
 
         for course_assigns in courses_assigns:
+            course_state1 = 0
+            course_state2 = 0
+            course_state3 = 0
+            
             course = self.user.courses[str(course_assigns['id'])]
             course_name = clear_MD(course['name'])
             url_to_course = f"/course/view.php?id={course['id']}"
