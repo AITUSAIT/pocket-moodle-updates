@@ -23,7 +23,7 @@ bot = Bot(token=TOKEN, parse_mode=types.ParseMode.MARKDOWN_V2)
 
 
 chrome_options = [
-    # '--headless',
+    '--headless',
     '--disable-gpu', "--no-sandbox",
     "--disable-dev-shm-usage", "--disable-crash-reporter",
     "--log-level=3", "--disable-extensions",
