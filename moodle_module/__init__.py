@@ -62,8 +62,9 @@ class Moodle():
                         self.user.msg = ''
                     else:
                         self.user.msg = 'Invalid login or password'
-            else:    
-                browser = Browser()
+            else:
+                proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}" if IS_PROXY else None
+                browser = Browser(proxy)
                 self.user.cookies, self.user.login_status, self.user.msg, self.user.token_du = await browser.get_cookies_moodle(self.user.user_id, self.user.barcode, self.user.passwd)
         else:
             self.user.login_status = True
