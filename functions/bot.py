@@ -23,3 +23,4 @@ async def send(chat_id, text):
         ...
     except exceptions.TelegramAPIError:
         logger.error(f"{chat_id}\n{text}\n", exc_info=True)
+

@@ -215,7 +215,7 @@ class Moodle():
                     if '%' in percentage:
                         if clear_MD(course['name']) not in new_grades[index_new]:
                             new_grades[index_new] += f"\n\n  [{clear_MD(course['name'])}]({clear_MD(url_to_course)}):"
-                        new_grades[index_new] += f"\n      {clear_MD(name)} / {clear_MD(percentage)}"
+                        new_grades[index_new] += f"\n      {clear_MD(name)} / *{clear_MD(percentage)}*"
                         if len(new_grades[index_new]) > 3000:
                             index_new += 1
                             new_grades.append('')
@@ -227,7 +227,7 @@ class Moodle():
                     if percentage != 'Error':
                         if clear_MD(course['name']) not in updated_grades[index_updated]:
                             updated_grades[index_updated] += f"\n\n  [{clear_MD(course['name'])}]({clear_MD(url_to_course)}):"
-                        updated_grades[index_updated] += f"\n      {clear_MD(name)} / {clear_MD(old_grade)} \-\> {clear_MD(percentage)}"
+                        updated_grades[index_updated] += f"\n      {clear_MD(name)} / {clear_MD(old_grade)} \-\> *{clear_MD(percentage)}*"
                         if len(updated_grades[index_updated]) > 3000:
                             index_updated += 1
                             updated_grades.append('')
@@ -333,6 +333,9 @@ class Moodle():
 
 
     async def get_attendance(self, courses_grades, course_id):
+        updated_att = 'Updated Attendance:'
+        moodle = 'https://moodle.astanait.edu.kz'
+
         try:
             for course_grades in courses_grades:
                 if 'tables' not in course_grades:
@@ -346,6 +349,7 @@ class Moodle():
                     if 'attendance' != name.lower():
                         continue
                     att_id = BeautifulSoup(grade['itemname']['content'], 'lxml').find('a')['href'].split('=')[-1]
+                    url_to_course = f"{moodle}/grade/report/user/index.php?id={course_id}"
 
                     href = f'/mod/attendance/view.php?id={att_id}&view=5'
                     timeout = aiohttp.ClientTimeout(total=60)
@@ -360,15 +364,26 @@ class Moodle():
                             c0_arr = table.find_all('td', {'class':'cell c0'})
                             c1_arr = table.find_all('td', {'class':'cell c1 lastcol'})
 
+                            old_att_dict = self.user.courses[str(course_id)].get('attendance', {})
                             self.user.courses[str(course_id)]['attendance'] = {}
                             for j in range(0, len(c0_arr)):
                                 text = str(c0_arr[j].getText().replace(':', ''))
                                 self.user.courses[str(course_id)]['attendance'][text] = c1_arr[j].getText()
+
+                            set1 = set(self.user.courses[str(course_id)]['attendance'].items())
+                            set2 = set(old_att_dict.items())
+                            diff = set1 - set2
+                            for item in diff:
+                                key, val = item
+                                if clear_MD(self.user.courses[str(course_id)]['name']) not in updated_att:
+                                    updated_att += f"\n\n  [{clear_MD(self.user.courses[str(course_id)]['name'])}]({clear_MD(url_to_course)}):"
+                                updated_att += f"\n      {clear_MD(key)} / {clear_MD(old_att_dict.get(key, '-'))} \-\> *{clear_MD(val)}*"
                         await s.close()
         except Exception as exc:
             # print('https://moodle.astanait.edu.kz'+href)
-            # print(exc)
+            print(exc)
             ...
+        return updated_att
 
 
     async def get_attendance_old(self, course_id):

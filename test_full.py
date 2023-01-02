@@ -37,7 +37,7 @@ async def check_updates(user_id, proxy_dict: dict):
 
             await moodle.add_new_courses(courses, active_courses_ids)
             print('>>>', "add_new_courses", time.time() - start, '\n')
-            await asyncio.gather(*[moodle.get_attendance(courses_grades, course_id) for course_id in course_ids])
+            updated_att = await asyncio.gather(*[moodle.get_attendance(courses_grades, course_id) for course_id in course_ids])
             print('>>>', "get_attendance", time.time() - start, '\n')
 
             new_grades, updated_grades = await moodle.set_grades(courses_grades)
@@ -63,7 +63,7 @@ async def check_updates(user_id, proxy_dict: dict):
 
 
             if not moodle.user.is_ignore:
-                for items in [new_grades, updated_grades, updated_deadlines, new_deadlines, upcoming_deadlines]:
+                for items in [new_grades, updated_grades, updated_deadlines, new_deadlines, upcoming_deadlines, updated_att]:
                     for item in items:
                         if len(item) > 20:
                             await send(moodle.user.user_id, item)
