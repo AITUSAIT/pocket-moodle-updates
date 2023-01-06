@@ -224,7 +224,7 @@ class Moodle():
                 elif id in course['grades'].keys() and str(percentage) != str(course['grades'][id]['percentage']):
                     old_grade = course['grades'][id]['percentage']
                     course['grades'][id]['percentage'] = percentage
-                    if percentage != 'Error':
+                    if percentage != 'Error' and not (percentage == '-' and old_grade == 'Error'):
                         if clear_MD(course['name']) not in updated_grades[index_updated]:
                             updated_grades[index_updated] += f"\n\n  [{clear_MD(course['name'])}]({clear_MD(url_to_course)}):"
                         updated_grades[index_updated] += f"\n      {clear_MD(name)} / {clear_MD(old_grade)} \-\> *{clear_MD(percentage)}*"

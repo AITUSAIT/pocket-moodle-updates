@@ -67,6 +67,8 @@ async def check_updates(user_id, proxy_dict: dict):
                     for item in items:
                         if len(item) > 20:
                             await send(moodle.user.user_id, item)
+                if moodle.user.is_ignore == 2:
+                    await send(moodle.user.user_id, 'Updated\!')
             else:
                 await send(moodle.user.user_id, 'Your courses are *ready*\!')
             print('>>>', "send_msg", time.time() - start, '\n')
