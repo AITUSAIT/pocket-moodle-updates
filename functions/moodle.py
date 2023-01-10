@@ -23,6 +23,8 @@ async def check_updates(user_id, proxy_dict: dict) -> int | str:
 
             await moodle.add_new_courses(courses, active_courses_ids)
             updated_att = await asyncio.gather(*[moodle.get_attendance(courses_grades, course_id) for course_id in active_courses_ids])
+            if not user.att_notify:
+                updated_att = []
 
             new_grades, updated_grades = await moodle.set_grades(courses_grades)
             updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass, course_ids)

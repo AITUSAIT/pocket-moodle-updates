@@ -68,6 +68,7 @@ async def get_user(user_id):
     user.is_active_sub = await is_active_sub(user_id)
 
     user.is_ignore = int(data.get('ignore', 0))
+    user.att_notify = int(data.get('att_notify', 1))
 
     if user.is_registered_moodle:
         user.passwd = decrypt(user.passwd, user.barcode)

@@ -35,6 +35,7 @@ class UserType:
         self.is_active_sub = None
 
         self.is_ignore = None
+        self.att_notify: int = None
 
         self.login_status = None
         self.msg = None
