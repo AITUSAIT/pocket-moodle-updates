@@ -257,6 +257,7 @@ class Moodle():
 
             if int(course['id']) in courses_ids:
                 for assign in course_assigns['assignments']:
+                    assign_id = str(assign['id'])
                     assignment_id = str(assign['cmid'])
                     assignment_name = assign['name']
                     assignment_due = (datetime.utcfromtimestamp(assign['duedate']) + timedelta(hours=6)).strftime('%A, %d %B %Y, %I:%M %p')
@@ -266,6 +267,7 @@ class Moodle():
                     
                     if assignment_id not in course['assignments']:
                         assignment_dict = {
+                            'assign_id': assign_id,
                             'id': assignment_id,
                             'name': assignment_name,
                             'due': assignment_due,
@@ -286,6 +288,8 @@ class Moodle():
                                 new_deadlines.append('')
                     else:
                         assign = course['assignments'][assignment_id]
+                        assign['assign_id'] = assign_id
+
 
                         diff_time = get_diff_time(assignment_due)
                         if assign['id'] == assignment_id:
