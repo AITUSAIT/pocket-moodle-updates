@@ -18,7 +18,8 @@ async def check_updates(user_id, proxy_dict: dict) -> int | str:
             active_courses_ids = await moodle.get_active_courses_ids(courses)
             course_ids = list(course['id'] for course in courses)
 
-            courses_ass = (await moodle.get_assignments())['courses']
+            if moodle.user.is_active_sub:
+                courses_ass = (await moodle.get_assignments())['courses']
             courses_grades = await asyncio.gather(*[moodle.get_grades(course_id) for course_id in course_ids])
 
             await moodle.add_new_courses(courses, active_courses_ids)
@@ -28,32 +29,35 @@ async def check_updates(user_id, proxy_dict: dict) -> int | str:
             #     updated_att = []
 
             new_grades, updated_grades = await moodle.set_grades(courses_grades)
-            updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass, course_ids)
+            if moodle.user.is_active_sub:
+                updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass, course_ids)
 
-            if moodle.user.token_du:
-                try:
-                    await moodle.set_gpa(await moodle.get_gpa())
-                except:
-                    ...
+            if moodle.user.is_active_sub:
+                if moodle.user.token_du:
+                    try:
+                        await moodle.set_gpa(await moodle.get_gpa())
+                    except:
+                        ...
 
-                curriculum = await moodle.get_curriculum(1)
-                curriculum.extend(await moodle.get_curriculum(2))
-                curriculum.extend(await moodle.get_curriculum(3))
-                await moodle.set_curriculum(curriculum)
+                    curriculum = await moodle.get_curriculum(1)
+                    curriculum.extend(await moodle.get_curriculum(2))
+                    curriculum.extend(await moodle.get_curriculum(3))
+                    await moodle.set_curriculum(curriculum)
 
-                await aioredis.set_key(moodle.user.user_id, 'curriculum', moodle.user.curriculum)
-                if moodle.user.gpa:
-                    await aioredis.set_key(moodle.user.user_id, 'gpa', moodle.user.gpa)
+                    await aioredis.set_key(moodle.user.user_id, 'curriculum', moodle.user.curriculum)
+                    if moodle.user.gpa:
+                        await aioredis.set_key(moodle.user.user_id, 'gpa', moodle.user.gpa)
 
-            if moodle.user.is_ignore in [0, 2]:
-                for items in [new_grades, updated_grades, updated_deadlines, new_deadlines, upcoming_deadlines]:
-                    for item in items:
-                        if len(item) > 20:
-                            await send(moodle.user.user_id, item)
-                if moodle.user.is_ignore == 2:
-                    await send(moodle.user.user_id, 'Updated\!')
-            else:
-                await send(moodle.user.user_id, 'Your courses are *ready*\!')
+            if moodle.user.is_active_sub:
+                if moodle.user.is_ignore in [0, 2]:
+                    for items in [new_grades, updated_grades, updated_deadlines, new_deadlines, upcoming_deadlines]:
+                        for item in items:
+                            if len(item) > 20:
+                                await send(moodle.user.user_id, item)
+                    if moodle.user.is_ignore == 2:
+                        await send(moodle.user.user_id, 'Updated\!')
+                else:
+                    await send(moodle.user.user_id, 'Your courses are *ready*\!')
 
             if moodle.user.cookies.__class__ is SimpleCookie:
                 moodle.user.cookies = {k: v.value for k, v in moodle.user.cookies.items()}
