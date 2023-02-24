@@ -37,6 +37,8 @@ async def run_check(user, proxy_dict: dict) -> str:
         res = 'Success'
     else:
         res = result
+        if "invalid" in result.lower():
+            await aioredis.set_sleep()
         if not await aioredis.check_if_msg(user['user_id']):
             await send(user['user_id'], clear_MD(result))
 
