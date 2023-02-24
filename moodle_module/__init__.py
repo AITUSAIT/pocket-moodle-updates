@@ -21,6 +21,7 @@ class UserType:
         self.token_du = None
         self.cookies = None
 
+        self.email = None
         self.barcode = None
         self.passwd = None
 
@@ -51,22 +52,30 @@ class Moodle():
 
 
     async def check(self):
-        if await self.check_cookies() is False:
+        if self.user.email is None:
+           self.user.token = None 
+        if self.user.token is None or type(await self.get_users_by_field('')) is not list:
+            self.user.token = None
             if str(self.user.barcode).isdigit():
                 if int(self.user.barcode) >= 210000:
                     proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}" if IS_PROXY else None
                     browser = Browser(proxy)
                     self.user.cookies, self.user.login_status, self.user.msg, self.user.token_du = await browser.get_cookies_moodle(self.user.user_id, self.user.barcode, self.user.passwd)
+                    if self.user.login_status:
+                        self.user.email = await self.get_email()
                 elif int(self.user.barcode) < 210000:
                     self.user.cookies, self.user.login_status = await self.auth_moodle()
                     if self.user.login_status:
                         self.user.msg = ''
+                        self.user.email = await self.get_email()
                     else:
                         self.user.msg = 'Invalid login or password'
             else:
                 proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}" if IS_PROXY else None
                 browser = Browser(proxy)
                 self.user.cookies, self.user.login_status, self.user.msg, self.user.token_du = await browser.get_cookies_moodle(self.user.user_id, self.user.barcode, self.user.passwd)
+                if self.user.login_status:
+                    self.user.email = await self.get_email()
         else:
             self.user.login_status = True
 
@@ -470,8 +479,7 @@ class Moodle():
             try:
                 self.user.id = (await self.get_users_by_field(self.user.barcode+"@astanait.edu.kz"))[0]['id']
             except:
-                value = await self.get_email()
-                self.user.id = (await self.get_users_by_field(value))[0]['id']
+                self.user.id = (await self.get_users_by_field(self.user.email))[0]['id']
         params = {
             'userid': self.user.id 
         }
@@ -485,8 +493,7 @@ class Moodle():
             try:
                 self.user.id = (await self.get_users_by_field(self.user.barcode+"@astanait.edu.kz"))[0]['id']
             except:
-                value = await self.get_email()
-                self.user.id = (await self.get_users_by_field(value))[0]['id']
+                self.user.id = (await self.get_users_by_field(self.user.email))[0]['id']
         params = {
             'userid': self.user.id,
             'courseid': courseid

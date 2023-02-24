@@ -9,32 +9,27 @@ from config import (MAIN_HOST, REDIS_DB, REDIS_HOST, REDIS_PASSWD, REDIS_PORT,
 from functions import aioredis
 from functions.bot import send
 from functions.functions import timeit
+from main import get_proxies
 from moodle_module import Moodle, UserType
 
 
 @timeit
 async def check_updates(user_id):
     start = time.time()
-    
-    await aioredis.start_redis(
-        REDIS_USER,
-        REDIS_PASSWD,
-        REDIS_HOST,
-        REDIS_PORT,
-        REDIS_DB
-    )
     user: UserType = await aioredis.get_user(user_id)
     print('>>>', "get_user", time.time() - start, '\n')
 
     if user.is_registered_moodle:
-        moodle = Moodle(user)
+        moodle = Moodle(user, {})
+        res = await moodle.get_users_by_field('')
+        print(res)
         await moodle.check()
 
+        moodle.user.token = "asd"
         if moodle.user.login_status and moodle.user.token:
-            courses = await moodle.get_courses()
-            active_courses_ids = await moodle.get_active_courses_ids()
-            for course in courses:
-                ...
+            value = await moodle.get_email()
+            res = await moodle.get_users_by_field(value)
+            print(res)
                 
 
             del user
@@ -47,4 +42,12 @@ async def check_updates(user_id):
             return msg
 
 
+asyncio.run(aioredis.start_redis(
+    REDIS_USER,
+    REDIS_PASSWD,
+    REDIS_HOST,
+    REDIS_PORT,
+    REDIS_DB
+))
+proxies = get_proxies()
 asyncio.run(check_updates(626591599))

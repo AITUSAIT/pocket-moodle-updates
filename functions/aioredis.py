@@ -49,6 +49,7 @@ async def get_user(user_id):
     user.user_id = data['user_id']
     user.id = None
 
+    user.email = data.get('email', None)
     user.barcode = data.get('barcode', None)
     user.passwd = data.get('passwd', None)
 

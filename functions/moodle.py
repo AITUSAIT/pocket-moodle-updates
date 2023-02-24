@@ -58,6 +58,7 @@ async def check_updates(user_id, proxy_dict: dict) -> int | str:
             if moodle.user.cookies.__class__ is SimpleCookie:
                 moodle.user.cookies = {k: v.value for k, v in moodle.user.cookies.items()}
 
+            await aioredis.set_key(moodle.user.user_id, 'email', moodle.user.email)
             await aioredis.set_key(moodle.user.user_id, 'token', moodle.user.token)
             await aioredis.set_key(moodle.user.user_id, 'cookies', moodle.user.cookies)
             await aioredis.set_key(moodle.user.user_id, 'courses', moodle.user.courses)

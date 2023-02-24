@@ -15,6 +15,7 @@ async def check_updates(user_id, proxy_dict: dict):
     start = time.time()
     
     user: UserType = await aioredis.get_user(user_id)
+    user.token = ''
     print('>>>', "get_user", time.time() - start, '\n')
 
     if user.is_registered_moodle:
