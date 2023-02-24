@@ -124,6 +124,10 @@ async def check_if_msg(user_id):
     if message != 1:
         await redis.hset(user_id, 'message', 1)
     return message
+
+
+async def set_sleep(user_id):
+    await redis.hset(user_id, 'sleep', 1)
     
 
 async def close():

@@ -1,9 +1,8 @@
 import asyncio
-from http.cookies import SimpleCookie
 import time
+from http.cookies import SimpleCookie
 
-from config import (REDIS_DB, REDIS_HOST, REDIS_PASSWD, REDIS_PORT,
-                    REDIS_USER)
+from config import REDIS_DB, REDIS_HOST, REDIS_PASSWD, REDIS_PORT, REDIS_USER
 from functions import aioredis
 from functions.bot import send
 from functions.functions import timeit

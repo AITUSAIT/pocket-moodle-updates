@@ -14,6 +14,7 @@ from functions.moodle import check_updates, send
 from server.module import run_server
 from itertools import cycle
 
+
 def get_proxies():
     return cycle(json.loads(asyncio.run(aioredis.redis1.hget('servers', token)))['proxy_list'])
 
