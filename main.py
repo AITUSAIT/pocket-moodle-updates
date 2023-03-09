@@ -81,7 +81,6 @@ async def main():
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.post(f'{MAIN_HOST}/api/update_user?token={token}', data=params, ssl=False) as response:
                     logger.error(f"{user.get('user_id', None)} {exc}", exc_info=True)
-            await aioredis.redis.hdel(user['user_id'], 'cookies', 'token')
             await asyncio.sleep(5)
 
     await aioredis.close()
