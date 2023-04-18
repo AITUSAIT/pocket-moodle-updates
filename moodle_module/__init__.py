@@ -57,7 +57,7 @@ class Moodle():
         if self.user.token is None or type(await self.get_users_by_field('')) is not list:
             self.user.token = None
             if str(self.user.barcode).isdigit():
-                if int(self.user.barcode) >= 210000:
+                if int(self.user.barcode) >= 210000 or int(self.user.barcode) < 200000:
                     proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}" if IS_PROXY else None
                     browser = Browser(proxy)
                     self.user.cookies, self.user.login_status, self.user.msg, self.user.token_du = await browser.get_cookies_moodle(self.user.user_id, self.user.barcode, self.user.passwd)
