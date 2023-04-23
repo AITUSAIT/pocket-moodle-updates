@@ -15,7 +15,7 @@ async def check_updates(user_id, proxy_dict: dict):
     start = time.time()
     
     user: UserType = await aioredis.get_user(user_id)
-    user.token = ''
+    # user.token = ''
     print('>>>', "get_user", time.time() - start, '\n')
 
     if user.is_registered_moodle:
@@ -101,5 +101,5 @@ asyncio.run(aioredis.start_redis(
     REDIS_DB
 ))
 proxies = get_proxies()
-asyncio.run(check_updates(626591599, next(proxies)))
+asyncio.run(check_updates('626591599', next(proxies)))
 # asyncio.run(check_updates(448066464))

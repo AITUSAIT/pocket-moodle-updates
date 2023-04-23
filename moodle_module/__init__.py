@@ -135,7 +135,7 @@ class Moodle():
                     if tds_1[i].text == 'Moodle mobile web service':
                         self.user.token = tds_0[i].text
 
-    async def make_request(self, function=None, token=None, params=None, headers=None, is_du=False, host='https://moodle.astanait.edu.kz', end_point='/webservice/rest/server.php/'):
+    async def make_request(self, function=None, token=None, params=None, headers=None, is_du=False, host='https://moodle.astanait.edu.kz', end_point='/webservice/rest/server.php/') -> dict:
         if not token:
             token = self.user.token
         if is_du:
@@ -261,6 +261,7 @@ class Moodle():
                     assignment_name = assign['name']
                     assignment_due = (datetime.utcfromtimestamp(assign['duedate']) + timedelta(hours=6)).strftime('%A, %d %B %Y, %I:%M %p')
                     assignment_graded = bool(int(assign['grade']))
+                    submitted = await self.is_assignment_submitted(assign_id)
 
                     url_to_assign = f'https://moodle.astanait.edu.kz/mod/assign/view.php?id={assignment_id}'
                     
@@ -271,6 +272,7 @@ class Moodle():
                             'name': assignment_name,
                             'due': assignment_due,
                             'graded': assignment_graded,
+                            'submitted': submitted,
                             'status': 0
                         }
                         course['assignments'][assignment_id] = assignment_dict
@@ -293,6 +295,7 @@ class Moodle():
                         diff_time = get_diff_time(assignment_due)
                         if assign['id'] == assignment_id:
                             assign['graded'] = assignment_graded
+                            assign['submitted'] = submitted
 
                         if assign['id'] == assignment_id and assignment_due != assign['due']:
                             assign['due'] = assignment_due
@@ -307,7 +310,13 @@ class Moodle():
                                 index_updated += 1
                                 updated_deadlines.append('')
 
-                        if assign['id'] == assignment_id and not assign['status'] and diff_time>timedelta(days=0) and diff_time<timedelta(days=3):
+                        if assign['id'] != assignment_id:
+                            continue
+
+                        if submitted:
+                            continue
+
+                        if not assign.get('status3', 0) and diff_time>timedelta(days=2) and diff_time<timedelta(days=3):
                             if not course_state3:
                                 course_state3 = 1
                                 upcoming_deadlines[index_upcoming] += f"\n\n  [{course_name}]({clear_MD(url_to_course)}):"
@@ -317,7 +326,40 @@ class Moodle():
                             if len(upcoming_deadlines[index_upcoming]) > 3000:
                                 index_upcoming += 1
                                 upcoming_deadlines.append('')
-                            assign['status'] = 1
+                            assign['status3'] = 1
+                        elif not assign.get('status2', 0) and diff_time>timedelta(days=1) and diff_time<timedelta(days=2):
+                            if not course_state3:
+                                course_state3 = 1
+                                upcoming_deadlines[index_upcoming] += f"\n\n  [{course_name}]({clear_MD(url_to_course)}):"
+                            upcoming_deadlines[index_upcoming] += f"\n      [{clear_MD(assign['name'])}]({clear_MD(url_to_assign)})"
+                            upcoming_deadlines[index_upcoming] += f"\n      {clear_MD(assignment_due)}"
+                            upcoming_deadlines[index_upcoming] += f"\n      Remaining: {clear_MD(diff_time)}\n"
+                            if len(upcoming_deadlines[index_upcoming]) > 3000:
+                                index_upcoming += 1
+                                upcoming_deadlines.append('')
+                            assign['status2'] = 1
+                        elif not assign.get('status1', 0) and diff_time>timedelta(days=0) and diff_time<timedelta(days=1):
+                            if not course_state3:
+                                course_state3 = 1
+                                upcoming_deadlines[index_upcoming] += f"\n\n  [{course_name}]({clear_MD(url_to_course)}):"
+                            upcoming_deadlines[index_upcoming] += f"\n      [{clear_MD(assign['name'])}]({clear_MD(url_to_assign)})"
+                            upcoming_deadlines[index_upcoming] += f"\n      {clear_MD(assignment_due)}"
+                            upcoming_deadlines[index_upcoming] += f"\n      Remaining: {clear_MD(diff_time)}\n"
+                            if len(upcoming_deadlines[index_upcoming]) > 3000:
+                                index_upcoming += 1
+                                upcoming_deadlines.append('')
+                            assign['status1'] = 1
+                        elif not assign.get('status03', 0) and diff_time>timedelta(hours=2) and diff_time<timedelta(hours=3):
+                            if not course_state3:
+                                course_state3 = 1
+                                upcoming_deadlines[index_upcoming] += f"\n\n  [{course_name}]({clear_MD(url_to_course)}):"
+                            upcoming_deadlines[index_upcoming] += f"\n      [{clear_MD(assign['name'])}]({clear_MD(url_to_assign)})"
+                            upcoming_deadlines[index_upcoming] += f"\n      {clear_MD(assignment_due)}"
+                            upcoming_deadlines[index_upcoming] += f"\n      Remaining: {clear_MD(diff_time)}\n"
+                            if len(upcoming_deadlines[index_upcoming]) > 3000:
+                                index_upcoming += 1
+                                upcoming_deadlines.append('')
+                            assign['status03'] = 1
         return [updated_deadlines, new_deadlines, upcoming_deadlines]       
 
     async def get_att_stat(self, s, att_id):
@@ -487,6 +529,18 @@ class Moodle():
     async def get_assignments(self):
         f = 'mod_assign_get_assignments'
         return await self.make_request(f)
+    
+    # ok
+    async def is_assignment_submitted(self, id):
+        f = 'mod_assign_get_submission_status'
+        params = {
+            'assignid': id,
+        }
+        data = await self.make_request(f, params=params)
+        status = data.get('lastattempt', {}).get('submission', {}).get('status', None)
+        if status is None or status == "submitted":
+            return True
+        return False        
 
     # bad
     async def get_att(self):
