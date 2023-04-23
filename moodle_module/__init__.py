@@ -50,7 +50,6 @@ class Moodle():
         self.user.login_status = None
         self.proxy_dict = proxy_dict
 
-
     async def check(self):
         if self.user.email is None:
            self.user.token = None 
@@ -82,7 +81,6 @@ class Moodle():
         if self.user.token is None and self.user.login_status:
             await self.get_and_set_token()
 
-
     async def auth_moodle(self):
         proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}" if IS_PROXY else None
         async with aiohttp.ClientSession('https://moodle.astanait.edu.kz') as s:
@@ -101,7 +99,6 @@ class Moodle():
                 else:
                     return s.cookie_jar.filter_cookies('https://moodle.astanait.edu.kz'), 1
 
-
     async def get_email(self):
         proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}" if IS_PROXY else None
         async with aiohttp.ClientSession('https://moodle.astanait.edu.kz') as s:
@@ -112,7 +109,6 @@ class Moodle():
                 contentnode = profile_tree.find('li', {'class': 'contentnode'})
                 email = contentnode.find('a').text
                 return email
-
 
     async def check_cookies(self):
         timeout = aiohttp.ClientTimeout(total=60)
@@ -126,7 +122,6 @@ class Moodle():
                 else:
                     return True
 
-
     async def get_and_set_token(self):
         timeout = aiohttp.ClientTimeout(total=60)
         proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}" if IS_PROXY else None
@@ -139,7 +134,6 @@ class Moodle():
                 for i in range(0, len(tds_0)):
                     if tds_1[i].text == 'Moodle mobile web service':
                         self.user.token = tds_0[i].text
-
 
     async def make_request(self, function=None, token=None, params=None, headers=None, is_du=False, host='https://moodle.astanait.edu.kz', end_point='/webservice/rest/server.php/'):
         if not token:
@@ -159,7 +153,6 @@ class Moodle():
                 r = await session.get(end_point, proxy=proxy)
             return await r.json()
 
-
     async def get_active_courses_ids(self, courses) -> tuple[int]:
         active_courses_ids = []
         for course in courses:
@@ -169,7 +162,6 @@ class Moodle():
             if now > start_date and now < end_date:
                 active_courses_ids.append(course['id'])
         return active_courses_ids
-    
     
     async def add_new_courses(self, courses, active_courses_ids):
         for course in courses:
@@ -183,7 +175,6 @@ class Moodle():
                 }
             else:
                 self.user.courses[str(course['id'])]['active'] = True if int(course['id']) in active_courses_ids else False
-
 
     async def set_grades(self, courses_grades):
         new_grades = ['New grades:']
@@ -244,7 +235,6 @@ class Moodle():
 
         return [new_grades, updated_grades]
     
-
     async def set_assigns(self, courses_assigns, courses_ids):
         updated_deadlines = ['Updated deadlines:']
         new_deadlines = ['New deadlines:']
@@ -330,7 +320,6 @@ class Moodle():
                             assign['status'] = 1
         return [updated_deadlines, new_deadlines, upcoming_deadlines]       
 
-
     async def get_att_stat(self, s, att_id):
         href = f'/mod/attendance/view.php?mode=2&sesscourses=all&id={att_id}&view=5'
         async with s.get(href, timeout=15) as request:
@@ -344,7 +333,6 @@ class Moodle():
             for j in range(0, len(c0_arr)):
                 text = str(c0_arr[j].getText().replace(':', ''))
                 self.user.att_statistic[text] = int(c1_arr[j].getText())
-
 
     async def get_attendance(self, courses_grades, course_id):
         updated_att = 'Updated Attendance:'
@@ -399,7 +387,6 @@ class Moodle():
             ...
         return updated_att
 
-
     async def get_attendance_old(self, course_id):
         try:
             timeout = aiohttp.ClientTimeout(total=60)
@@ -430,7 +417,6 @@ class Moodle():
         except Exception as exc:
             print(exc)
 
-
     async def set_gpa(self, gpa):
         avg_gpa = gpa['averageGpa']
         all_credits_sum = gpa['allCreditsSum']
@@ -444,7 +430,6 @@ class Moodle():
 
         self.user.gpa = gpa_dict
             
-
     async def set_curriculum(self, curriculum):
         self.user.curriculum = {
             '1': {'1': {}, '2': {}, '3': {}},
@@ -471,7 +456,6 @@ class Moodle():
         }
         return await self.make_request(f, params=params)
 
-
     # ok
     async def get_courses(self):
         f = 'core_enrol_get_users_courses'
@@ -484,7 +468,6 @@ class Moodle():
             'userid': self.user.id 
         }
         return await self.make_request(f, params=params)
-
 
     # ok
     async def get_grades(self, courseid):
@@ -500,18 +483,15 @@ class Moodle():
         }
         return await self.make_request(f, params=params)
 
-    
     # ok
     async def get_assignments(self):
         f = 'mod_assign_get_assignments'
         return await self.make_request(f)
 
-
     # bad
     async def get_att(self):
         f = 'mod_attendance_get_sessions'
         return await self.make_request(f, token=self.user.token_att, end_point='mod/attendance/externallib.php')
-
 
     # ok-bad
     async def get_posts(self):
@@ -521,7 +501,6 @@ class Moodle():
             'discussionid': 600
         }
         return await self.make_request(f, token=self.user.token_att, params=params)
-
 
     # ok
     async def get_gpa(self):
