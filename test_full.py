@@ -42,8 +42,9 @@ async def check_updates(user_id, proxy_dict: dict):
             # print('>>>', "get_attendance", time.time() - start, '\n')
 
             new_grades, updated_grades = await moodle.set_grades(courses_grades)
-            updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass, course_ids)
-            print('>>>', "set_grades_and_assigns", time.time() - start, '\n')
+            print('>>>', "set_grades", time.time() - start, '\n')
+            updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass, active_courses_ids)
+            print('>>>', "set_assigns", time.time() - start, '\n')
 
             if moodle.user.token_du:
                 try:
@@ -63,20 +64,28 @@ async def check_updates(user_id, proxy_dict: dict):
                     await aioredis.set_key(moodle.user.user_id, 'gpa', moodle.user.gpa)
 
 
-            if moodle.user.is_ignore in [0, 2]:
-                for items in [new_grades, updated_grades, updated_deadlines, new_deadlines, upcoming_deadlines]:
-                    for item in items:
-                        if len(item) > 20:
-                            await send(moodle.user.user_id, item)
+            if moodle.user.is_active_sub:
+                if moodle.user.is_ignore in [0, 2]:
+                    for items in [new_grades, updated_grades, updated_deadlines, new_deadlines, upcoming_deadlines]:
+                        for item in items:
+                            if len(item) > 20:
+                                await send(moodle.user.user_id, item)
+                    if moodle.user.is_ignore == 2:
+                        await send(moodle.user.user_id, 'Updated\!')
+                else:
+                    await send(moodle.user.user_id, 'Your courses are *ready*\!')
+            else:
                 if moodle.user.is_ignore == 2:
                     await send(moodle.user.user_id, 'Updated\!')
-            else:
-                await send(moodle.user.user_id, 'Your courses are *ready*\!')
+                elif moodle.user.is_ignore == 1:
+                    await send(moodle.user.user_id, 'Your courses are *ready*\!')
+
             print('>>>', "send_msg", time.time() - start, '\n')
 
             if moodle.user.cookies.__class__ is SimpleCookie:
                 moodle.user.cookies = {k: v.value for k, v in moodle.user.cookies.items()}
 
+            await aioredis.set_key(moodle.user.user_id, 'email', moodle.user.email)
             await aioredis.set_key(moodle.user.user_id, 'token', moodle.user.token)
             await aioredis.set_key(moodle.user.user_id, 'cookies', moodle.user.cookies)
             await aioredis.set_key(moodle.user.user_id, 'courses', moodle.user.courses)
