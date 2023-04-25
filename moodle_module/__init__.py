@@ -262,6 +262,9 @@ class Moodle():
                 assignment_graded = bool(int(assign['grade']))
                 submitted = True if course['assignments'].get(assignment_id, {}).get('submitted', False) else await self.is_assignment_submitted(assign_id)
 
+                if submitted:
+                    continue
+                
                 url_to_assign = f'https://moodle.astanait.edu.kz/mod/assign/view.php?id={assignment_id}'
                 
                 if assignment_id not in course['assignments']:
@@ -292,9 +295,6 @@ class Moodle():
                     diff_time = get_diff_time(assignment_due)
                     assign['graded'] = assignment_graded
                     assign['submitted'] = submitted
-
-                    if submitted:
-                        continue
 
                     if assignment_due != assign['due']:
                         assign['due'] = assignment_due
