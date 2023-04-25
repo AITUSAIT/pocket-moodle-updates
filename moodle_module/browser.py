@@ -103,7 +103,7 @@ class Browser:
                 self.driver.quit()
             except:
                 ...
-            return {}, False, -1, None
+            return {}, False, 'Error - WebDriver', None
 
     def get_cookies_data(self):
         cookies = {}
