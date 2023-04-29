@@ -26,7 +26,7 @@ async def check_updates(user_id, proxy_dict: dict):
         if moodle.user.login_status and moodle.user.token:
             courses = await moodle.get_courses()
             active_courses_ids = await moodle.get_active_courses_ids(courses)
-            course_ids = list(course['id'] for course in courses)
+            course_ids = list(int(course['id']) for course in courses)
             print('>>>', "get_active_courses_ids", time.time() - start, '\n')
 
 
@@ -43,26 +43,27 @@ async def check_updates(user_id, proxy_dict: dict):
 
             new_grades, updated_grades = await moodle.set_grades(courses_grades)
             print('>>>', "set_grades", time.time() - start, '\n')
-            updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass, active_courses_ids)
-            print('>>>', "set_assigns", time.time() - start, '\n')
+            if moodle.user.is_active_sub:
+                updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass, course_ids)
+                print('>>>', "set_assigns", time.time() - start, '\n')
 
-            if moodle.user.token_du:
-                try:
-                    await moodle.set_gpa(await moodle.get_gpa())
-                except:
-                    ...
-                print('>>>', "get_gpa", time.time() - start, '\n')
+            if moodle.user.is_active_sub:
+                if moodle.user.token_du:
+                    try:
+                        await moodle.set_gpa(await moodle.get_gpa())
+                    except:
+                        ...
+                    print('>>>', "get_gpa", time.time() - start, '\n')
 
-                curriculum = await moodle.get_curriculum(1)
-                curriculum.extend(await moodle.get_curriculum(2))
-                curriculum.extend(await moodle.get_curriculum(3))
-                await moodle.set_curriculum(curriculum)
-                
-                print('>>>', "get_curriculum", time.time() - start, '\n')
-                await aioredis.set_key(moodle.user.user_id, 'curriculum', moodle.user.curriculum)
-                if moodle.user.gpa:
-                    await aioredis.set_key(moodle.user.user_id, 'gpa', moodle.user.gpa)
-
+                    curriculum = await moodle.get_curriculum(1)
+                    curriculum.extend(await moodle.get_curriculum(2))
+                    curriculum.extend(await moodle.get_curriculum(3))
+                    await moodle.set_curriculum(curriculum)
+                    
+                    print('>>>', "get_curriculum", time.time() - start, '\n')
+                    await aioredis.set_key(moodle.user.user_id, 'curriculum', moodle.user.curriculum)
+                    if moodle.user.gpa:
+                        await aioredis.set_key(moodle.user.user_id, 'gpa', moodle.user.gpa)
 
             if moodle.user.is_active_sub:
                 if moodle.user.is_ignore in [0, 2]:
@@ -111,4 +112,4 @@ asyncio.run(aioredis.start_redis(
 ))
 proxies = get_proxies()
 asyncio.run(check_updates('626591599', next(proxies)))
-# asyncio.run(check_updates(448066464))
+# asyncio.run(check_updates('957840206', next(proxies)))

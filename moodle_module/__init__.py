@@ -244,8 +244,8 @@ class Moodle():
         index_updated = 0
         index_new = 0
         index_upcoming = 0
-
-        for course_assigns in [ cs for cs in courses_assigns if self.user.courses[str(cs['id'])]['id'] in courses_ids ]:
+        
+        for course_assigns in [ cs for cs in courses_assigns if int(self.user.courses[str(cs['id'])]['id']) in courses_ids ]:
             course_state1 = 0
             course_state2 = 0
             course_state3 = 0
