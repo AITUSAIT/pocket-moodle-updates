@@ -1,12 +1,13 @@
 import asyncio
 import time
 from http.cookies import SimpleCookie
+import traceback
 
 from config import REDIS_DB, REDIS_HOST, REDIS_PASSWD, REDIS_PORT, REDIS_USER
 from functions import aioredis
 from functions.bot import send
 from functions.functions import timeit
-from main import get_proxies
+from main import a_get_proxies, get_proxies
 from moodle_module import Moodle, UserType
 
 logs = False
@@ -117,10 +118,14 @@ async def main():
         REDIS_PORT,
         REDIS_DB
     )
-    proxies = get_proxies()
+    proxies = await a_get_proxies()
     while 1:
-        start = time.time()
-        await check_updates('626591599', next(proxies))
-        print('>>>', "DONE", time.time() - start, '\n')
+        try:
+            await check_updates('626591599', next(proxies))
+        except asyncio.exceptions.TimeoutError:
+            print('Timeout MOODLE')
+        except Exception as exc:
+            print('ERROR')
+            traceback.format_exc(exc)
 
 asyncio.run(main())

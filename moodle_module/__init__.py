@@ -145,7 +145,7 @@ class Moodle():
             args = {'moodlewsrestformat': 'json', 'wstoken': token, 'wsfunction': function}
             if params:
                 args.update(params)
-        timeout = aiohttp.ClientTimeout(total=60)
+        timeout = aiohttp.ClientTimeout(total=5)
         proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}" if IS_PROXY else None
         async with aiohttp.ClientSession(host, timeout=timeout, headers=headers) as session:
             if args:

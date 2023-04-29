@@ -24,7 +24,10 @@ async def a_get_proxies():
 
 
 async def run_check(user, proxy_dict: dict) -> str:
-    result = await check_updates(user['user_id'], proxy_dict)
+    try:
+        result = await check_updates(user['user_id'], proxy_dict)
+    except asyncio.exceptions.TimeoutError:
+        result = 'Timeout MOODLE'
 
     if result == 0:
         res = 'Invalid Login'
@@ -78,7 +81,7 @@ async def main():
             }
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.post(f'{MAIN_HOST}/api/update_user?token={token}', data=params, ssl=False) as response:
-                    logger.error(f"{user.get('user_id', None)} {exc}", exc_info=True)
+                    logger.error(f"{user.get('user_id', None)} {str(exc)}", exc_info=True)
             await asyncio.sleep(5)
 
     await aioredis.close()
