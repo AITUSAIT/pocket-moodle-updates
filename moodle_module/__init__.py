@@ -323,7 +323,7 @@ class Moodle():
                     ]
 
                     for key, td in reminders_filter:
-                        if not assign.get(key, 0) and diff_time<td:
+                        if not assign.get(key, 0) and diff_time>timedelta(hours=1) and diff_time<td:
                             if not course_state3:
                                 course_state3 = 1
                                 upcoming_deadlines[index_upcoming] += f"\n\n  [{course_name}]({clear_MD(url_to_course)}):"

@@ -30,7 +30,7 @@ async def check_updates(user_id, proxy_dict: dict) -> int | str:
 
             new_grades, updated_grades = await moodle.set_grades(courses_grades)
             if moodle.user.is_active_sub:
-                updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass, course_ids)
+                updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass, active_courses_ids)
 
             if moodle.user.is_active_sub:
                 if moodle.user.token_du:

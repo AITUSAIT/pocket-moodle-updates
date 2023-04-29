@@ -9,43 +9,49 @@ from functions.functions import timeit
 from main import get_proxies
 from moodle_module import Moodle, UserType
 
+logs = False
+
 
 @timeit
 async def check_updates(user_id, proxy_dict: dict):
+    def custom_print(*args):
+        if logs:
+            print(*args)
+
     start = time.time()
     
     user: UserType = await aioredis.get_user(user_id)
     # user.token = ''
-    print('>>>', "get_user", time.time() - start, '\n')
+    custom_print('>>>', "get_user", time.time() - start, '\n')
 
     if user.is_registered_moodle:
         moodle = Moodle(user, proxy_dict)
         await moodle.check()
-        print('>>>', "moodle.check()", time.time() - start, '\n')
+        custom_print('>>>', "moodle.check()", time.time() - start, '\n')
 
         if moodle.user.login_status and moodle.user.token:
             courses = await moodle.get_courses()
             active_courses_ids = await moodle.get_active_courses_ids(courses)
             course_ids = list(int(course['id']) for course in courses)
-            print('>>>', "get_active_courses_ids", time.time() - start, '\n')
+            custom_print('>>>', "get_active_courses_ids", time.time() - start, '\n')
 
 
             courses_ass = (await moodle.get_assignments())['courses']
             courses_grades = await asyncio.gather(*[moodle.get_grades(course_id) for course_id in course_ids])
-            print('>>>', "get_assignments_and_grades", time.time() - start, '\n')
+            custom_print('>>>', "get_assignments_and_grades", time.time() - start, '\n')
 
 
             await moodle.add_new_courses(courses, active_courses_ids)
-            print('>>>', "add_new_courses", time.time() - start, '\n')
+            custom_print('>>>', "add_new_courses", time.time() - start, '\n')
 
             # updated_att = await asyncio.gather(*[moodle.get_attendance(courses_grades, course_id) for course_id in course_ids])
-            # print('>>>', "get_attendance", time.time() - start, '\n')
+            # custom_print('>>>', "get_attendance", time.time() - start, '\n')
 
             new_grades, updated_grades = await moodle.set_grades(courses_grades)
-            print('>>>', "set_grades", time.time() - start, '\n')
+            custom_print('>>>', "set_grades", time.time() - start, '\n')
             if moodle.user.is_active_sub:
                 updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass, course_ids)
-                print('>>>', "set_assigns", time.time() - start, '\n')
+                custom_print('>>>', "set_assigns", time.time() - start, '\n')
 
             if moodle.user.is_active_sub:
                 if moodle.user.token_du:
@@ -53,14 +59,14 @@ async def check_updates(user_id, proxy_dict: dict):
                         await moodle.set_gpa(await moodle.get_gpa())
                     except:
                         ...
-                    print('>>>', "get_gpa", time.time() - start, '\n')
+                    custom_print('>>>', "get_gpa", time.time() - start, '\n')
 
                     curriculum = await moodle.get_curriculum(1)
                     curriculum.extend(await moodle.get_curriculum(2))
                     curriculum.extend(await moodle.get_curriculum(3))
                     await moodle.set_curriculum(curriculum)
                     
-                    print('>>>', "get_curriculum", time.time() - start, '\n')
+                    custom_print('>>>', "get_curriculum", time.time() - start, '\n')
                     await aioredis.set_key(moodle.user.user_id, 'curriculum', moodle.user.curriculum)
                     if moodle.user.gpa:
                         await aioredis.set_key(moodle.user.user_id, 'gpa', moodle.user.gpa)
@@ -81,7 +87,7 @@ async def check_updates(user_id, proxy_dict: dict):
                 elif moodle.user.is_ignore == 1:
                     await send(moodle.user.user_id, 'Your courses are *ready*\!')
 
-            print('>>>', "send_msg", time.time() - start, '\n')
+            custom_print('>>>', "send_msg", time.time() - start, '\n')
 
             if moodle.user.cookies.__class__ is SimpleCookie:
                 moodle.user.cookies = {k: v.value for k, v in moodle.user.cookies.items()}
@@ -91,7 +97,7 @@ async def check_updates(user_id, proxy_dict: dict):
             await aioredis.set_key(moodle.user.user_id, 'cookies', moodle.user.cookies)
             await aioredis.set_key(moodle.user.user_id, 'courses', moodle.user.courses)
             await aioredis.set_key(moodle.user.user_id, 'ignore', '0')
-            print('>>>', "redis set_keys", time.time() - start, '\n')
+            custom_print('>>>', "redis set_keys", time.time() - start, '\n')
 
             del user
             del moodle
@@ -103,13 +109,18 @@ async def check_updates(user_id, proxy_dict: dict):
             return msg
 
 
-asyncio.run(aioredis.start_redis(
-    REDIS_USER,
-    REDIS_PASSWD,
-    REDIS_HOST,
-    REDIS_PORT,
-    REDIS_DB
-))
-proxies = get_proxies()
-asyncio.run(check_updates('626591599', next(proxies)))
-# asyncio.run(check_updates('957840206', next(proxies)))
+async def main():
+    await aioredis.start_redis(
+        REDIS_USER,
+        REDIS_PASSWD,
+        REDIS_HOST,
+        REDIS_PORT,
+        REDIS_DB
+    )
+    proxies = get_proxies()
+    while 1:
+        start = time.time()
+        await check_updates('626591599', next(proxies))
+        print('>>>', "DONE", time.time() - start, '\n')
+
+asyncio.run(main())
