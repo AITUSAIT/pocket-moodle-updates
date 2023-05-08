@@ -33,7 +33,7 @@ async def run_check(user, proxy_dict: dict) -> str:
         res = 'Invalid Login'
         if not await aioredis.check_if_msg(user['user_id']):
             await send(user['user_id'],'Invalid login or password\n/register\_moodle to fix')
-            await aioredis.set_sleep(user['user_id'])
+            # await aioredis.set_sleep(user['user_id'])
     elif result == 1:
         res = 'Success'
     else:
@@ -41,7 +41,7 @@ async def run_check(user, proxy_dict: dict) -> str:
         if "invalid" in result.lower():
             if not await aioredis.check_if_msg(user['user_id']):
                 await send(user['user_id'],'Invalid login or password\n/register\_moodle to fix')
-                await aioredis.set_sleep(user['user_id'])
+                # await aioredis.set_sleep(user['user_id'])
 
     return res
 

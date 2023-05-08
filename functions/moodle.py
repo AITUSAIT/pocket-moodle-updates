@@ -59,7 +59,7 @@ async def check_updates(user_id, proxy_dict: dict) -> int | str:
                 elif moodle.user.is_ignore == 1:
                     await send(moodle.user.user_id, 'Your courses are *ready*\!')
             else:
-                if moodle.user.is_ignore == [0, 2]:
+                if moodle.user.is_ignore == 2:
                     await send(moodle.user.user_id, 'Updated\!')
                 elif moodle.user.is_ignore == 1:
                     await send(moodle.user.user_id, 'Your courses are *ready*\!')
