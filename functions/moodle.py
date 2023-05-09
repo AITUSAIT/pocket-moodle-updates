@@ -1,9 +1,13 @@
 import asyncio
 from http.cookies import SimpleCookie
+from itertools import cycle
 
 from functions import aioredis
 from functions.bot import send
 from moodle_module import Moodle, UserType
+
+
+count_student = cycle([0, 1, 2])
 
 
 async def check_updates(user_id, proxy_dict: dict) -> int | str:
@@ -30,7 +34,8 @@ async def check_updates(user_id, proxy_dict: dict) -> int | str:
 
             new_grades, updated_grades = await moodle.set_grades(courses_grades)
             if moodle.user.is_active_sub:
-                updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass, active_courses_ids)
+                if next(count_student) == 0:
+                    updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass, active_courses_ids)
 
             if moodle.user.is_active_sub:
                 if moodle.user.token_du:
