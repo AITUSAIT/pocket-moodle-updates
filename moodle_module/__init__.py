@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 import os
 import re
-import time
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -112,7 +111,7 @@ class Moodle():
                 return email
 
     async def check_cookies(self):
-        timeout = aiohttp.ClientTimeout(total=60)
+        timeout = aiohttp.ClientTimeout(total=5)
         proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}" if IS_PROXY else None
         async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', timeout=timeout, cookies=self.user.cookies) as session:
             async with session.get("/login/index.php", timeout=15, proxy=proxy) as request:
@@ -124,7 +123,7 @@ class Moodle():
                     return True
 
     async def get_and_set_token(self):
-        timeout = aiohttp.ClientTimeout(total=60)
+        timeout = aiohttp.ClientTimeout(total=5)
         proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}" if IS_PROXY else None
         async with aiohttp.ClientSession('https://moodle.astanait.edu.kz', timeout=timeout, cookies=self.user.cookies) as session:
             async with session.get("/user/managetoken.php", timeout=15, proxy=proxy) as request:

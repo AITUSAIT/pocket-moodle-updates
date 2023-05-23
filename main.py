@@ -26,8 +26,10 @@ async def a_get_proxies():
 async def run_check(user, proxy_dict: dict) -> str:
     try:
         result = await check_updates(user['user_id'], proxy_dict)
+    except aiohttp.ClientConnectionError:
+        result = 'MOODLE CONNECTION FAILED'
     except asyncio.exceptions.TimeoutError:
-        result = 'Timeout MOODLE'
+        result = 'TIMEOUT MOODLE'
 
     if result == 0:
         res = 'Invalid Login'

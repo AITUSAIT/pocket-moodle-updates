@@ -7,7 +7,7 @@ ENV TZ=Asia/Almaty
 COPY requirements.txt .
 
 RUN apt-get update -y && apt-get upgrade -y && \
-    apt-get install -yqq --no-install-recommends python3 python3-pip wget unzip tzdata && \
+    apt-get install -yqq --no-install-recommends python3.10 python3-pip wget unzip tzdata && \
     pip3 install -r requirements.txt && \
     wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
     apt install -y ./google-chrome-stable_current_amd64.deb && \

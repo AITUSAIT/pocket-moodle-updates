@@ -1,7 +1,7 @@
 from datetime import datetime
 import json
 
-import aioredis
+from redis import asyncio as aioredis
 from functions.functions import decrypt
 
 redis : aioredis.Redis = None
