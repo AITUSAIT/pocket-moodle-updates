@@ -91,7 +91,7 @@ class Moodle():
 
     async def get_grades(self, courseid):
         f = 'gradereport_user_get_grades_table'
-        if self.user.id is None:
+        if not self.user.id:
             self.user.id = (await self.get_users_by_field(self.user.mail))[0]['id']
 
         params = {
@@ -119,9 +119,10 @@ class Moodle():
         active_courses_ids = []
         for course in courses:
             now = datetime.now()
-            start_date = datetime.utcfromtimestamp(course['startdate']) + timedelta(hours=6)
+            # start_date = datetime.utcfromtimestamp(course['startdate']) + timedelta(hours=6)
             end_date = datetime.utcfromtimestamp(course['enddate']) + timedelta(hours=6)
-            if now > start_date and now < end_date:
+            if now < end_date:
+            # if now > start_date and now < end_date:
                 active_courses_ids.append(course['id'])
         return active_courses_ids
     
@@ -158,9 +159,7 @@ class Moodle():
             'Course total': '4',
         }
 
-        for course_grades in courses_grades:
-            if 'tables' not in course_grades:
-                continue
+        for course_grades in [ _ for _ in courses_grades if 'tables' in courses_grades and self.user.courses[str(course_grades['courseid'])].active ]:
             course_grades = course_grades['tables'][0]
             course = self.user.courses[str(course_grades['courseid'])]
             url_to_course = f"{moodle}/grade/report/user/index.php?id={course.course_id}"

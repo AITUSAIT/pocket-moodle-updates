@@ -32,7 +32,7 @@ async def check_updates(user_id, proxy_dict: dict) -> int | str:
     course_ids = list(course['id'] for course in courses)
 
     courses_ass = (await moodle.get_assignments())['courses']
-    courses_grades = await asyncio.gather(*[moodle.get_grades(course_id) for course_id in course_ids])
+    courses_grades = await asyncio.gather(*[moodle.get_grades(course_id) for course_id in active_courses_ids])
 
     await moodle.add_new_courses(courses, active_courses_ids)
     CourseDB.get_courses.cache_clear()

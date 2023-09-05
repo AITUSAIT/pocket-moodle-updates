@@ -46,25 +46,27 @@ async def check_updates(user_id, proxy_dict: dict):
     custom_print('>>>', "get_courses", time.time() - start, '\n')
 
     courses_ass = (await moodle.get_assignments())['courses']
-    courses_grades = await asyncio.gather(*[moodle.get_grades(course_id) for course_id in course_ids])
-    custom_print('>>>', "get_courses_ass_grades", time.time() - start, '\n')
+    custom_print('>>>', "get_courses_ass", time.time() - start, '\n')
+    courses_grades = await asyncio.gather(*[moodle.get_grades(course_id) for course_id in active_courses_ids])
+    custom_print('>>>', "get_courses_grades", time.time() - start, '\n')
 
     await moodle.add_new_courses(courses, active_courses_ids)
     CourseDB.get_courses.cache_clear()
     user.courses = await CourseDB.get_courses(user_id)
-    custom_print('>>>', "get_courses_ass_grades", time.time() - start, '\n')
+    custom_print('>>>', "update_courses", time.time() - start, '\n')
 
     new_grades, updated_grades = await moodle.set_grades(courses_grades)
-    custom_print('>>>', "get_grades", time.time() - start, '\n')
+    custom_print('>>>', "set_grades", time.time() - start, '\n')
 
     if moodle.user.is_active_sub() \
         or next(count_student) == 0 \
             or notification_status.is_update_requested \
                 or notification_status.is_newbie_requested:
         updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass)
+    custom_print('>>>', "set_deadlines", time.time() - start, '\n')
     await DeadlineDB.commit()
     await GradeDB.commit()
-    custom_print('>>>', "set_grades_deadlines", time.time() - start, '\n')
+    custom_print('>>>', "commit_grades_deadlines", time.time() - start, '\n')
     
     if moodle.user.is_active_sub() and not notification_status.is_newbie_requested:
         for items in [new_grades, updated_grades, updated_deadlines, new_deadlines, upcoming_deadlines]:
