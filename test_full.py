@@ -6,7 +6,8 @@ from itertools import cycle
 from config import DB_DB, DB_HOST, DB_PASSWD, DB_PORT, DB_USER, token
 from functions.bot import send
 from main import a_get_proxies
-from modules.database import DB, CourseDB, GradeDB, NotificationDB, UserDB
+from modules.database import (DB, CourseDB, DeadlineDB, GradeDB,
+                              NotificationDB, UserDB)
 from modules.moodle import Moodle, User
 
 logs = True
@@ -54,7 +55,6 @@ async def check_updates(user_id, proxy_dict: dict):
     custom_print('>>>', "get_courses_ass_grades", time.time() - start, '\n')
 
     new_grades, updated_grades = await moodle.set_grades(courses_grades)
-    await GradeDB.commit()
     custom_print('>>>', "get_grades", time.time() - start, '\n')
 
     if moodle.user.is_active_sub() \
@@ -62,12 +62,16 @@ async def check_updates(user_id, proxy_dict: dict):
             or notification_status.is_update_requested \
                 or notification_status.is_newbie_requested:
         updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass)
-
+    await DeadlineDB.commit()
+    await GradeDB.commit()
+    custom_print('>>>', "set_grades_deadlines", time.time() - start, '\n')
+    
     if moodle.user.is_active_sub() and not notification_status.is_newbie_requested:
         for items in [new_grades, updated_grades, updated_deadlines, new_deadlines, upcoming_deadlines]:
             for item in items:
                 if len(item) > 20:
                     await send(moodle.user.user_id, item)
+    custom_print('>>>', "send_messages", time.time() - start, '\n')
     
     if notification_status.is_update_requested:
         await send(moodle.user.user_id, 'Updated\!')
@@ -75,6 +79,7 @@ async def check_updates(user_id, proxy_dict: dict):
     elif notification_status.is_newbie_requested:
         await send(moodle.user.user_id, 'Your courses are *ready*\!')
         await NotificationDB.set_notification_status(user.user_id, 'is_newbie_requested', False)
+    custom_print('>>>', "update_notifications", time.time() - start, '\n')
 
     del user
     del moodle

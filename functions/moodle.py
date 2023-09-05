@@ -2,7 +2,8 @@ import asyncio
 from itertools import cycle
 
 from functions.bot import send
-from modules.database import CourseDB, GradeDB, NotificationDB, UserDB
+from modules.database import (CourseDB, DeadlineDB, GradeDB, NotificationDB,
+                              UserDB)
 from modules.moodle import Moodle, User
 
 count_student = cycle([0, 1, 2])
@@ -38,12 +39,13 @@ async def check_updates(user_id, proxy_dict: dict) -> int | str:
     user.courses = await CourseDB.get_courses(user_id)
 
     new_grades, updated_grades = await moodle.set_grades(courses_grades)
-    await GradeDB.commit()
     if moodle.user.is_active_sub() \
         or next(count_student) == 0 \
             or notification_status.is_update_requested \
                 or notification_status.is_newbie_requested:
         updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass)
+    await GradeDB.commit()
+    await DeadlineDB.commit()
 
     if moodle.user.is_active_sub() and not notification_status.is_newbie_requested:
         for items in [new_grades, updated_grades, updated_deadlines, new_deadlines, upcoming_deadlines]:
