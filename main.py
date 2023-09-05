@@ -1,62 +1,51 @@
 import asyncio
-import json
 import os
 import threading
-
-import aiohttp
-
-from config import (MAIN_HOST, REDIS_DB, REDIS_HOST, REDIS_PASSWD, REDIS_PORT,
-                    REDIS_USER, token)
-from functions import aioredis
-from functions.functions import clear_MD
-from functions.logger import logger
-from functions.moodle import check_updates, send
-from server.module import run_server
 from itertools import cycle
 
+import aiohttp
+from aiohttp import web
 
-def get_proxies():
-    return cycle(json.loads(asyncio.run(aioredis.redis1.hget('servers', token)))['proxy_list'])
+from config import (DB_DB, DB_HOST, DB_PASSWD, DB_PORT, DB_USER, MAIN_HOST,
+                    token)
+from functions.moodle import check_updates
+from modules.database import DB, ServerDB
+from modules.logger import Logger
 
 
-async def a_get_proxies():
-    return cycle(json.loads( (await aioredis.redis1.hget('servers', token)) )['proxy_list'])
+Logger.load_config()
+
+
+async def a_get_proxies(token: str):
+    server_data = (await ServerDB.get_servers()).get(token)
+
+    if server_data:
+        return cycle(server_data.proxies)
+    else:
+        return None
 
 
 async def run_check(user, proxy_dict: dict) -> str:
     try:
         result = await check_updates(user['user_id'], proxy_dict)
     except aiohttp.ClientConnectionError:
-        result = 'MOODLE CONNECTION FAILED'
+        res = 'MOODLE CONNECTION FAILED'
     except asyncio.exceptions.TimeoutError:
-        result = 'TIMEOUT MOODLE'
-
-    if result == 0:
-        res = 'Invalid Login'
-        if not await aioredis.check_if_msg(user['user_id']):
-            await send(user['user_id'],'Invalid login or password\n/register\_moodle to fix')
-            # await aioredis.set_sleep(user['user_id'])
-    elif result == 1:
-        res = 'Success'
+        res = 'TIMEOUT MOODLE'
     else:
-        res = result
-        if "invalid" in result.lower():
-            if not await aioredis.check_if_msg(user['user_id']):
-                await send(user['user_id'],'Invalid login or password\n/register\_moodle to fix')
-                # await aioredis.set_sleep(user['user_id'])
+        if result == 1:
+            res = 'Success'
+        elif result == -1:
+            res = 'Failed to check Token and Email'
 
     return res
 
 
 async def main():
-    await aioredis.start_redis(
-        REDIS_USER,
-        REDIS_PASSWD,
-        REDIS_HOST,
-        REDIS_PORT,
-        REDIS_DB
-    )
-    proxies = await a_get_proxies()
+    dsn = f"postgresql://{DB_USER}:{DB_PASSWD}@{DB_HOST}:{DB_PORT}/{DB_DB}"
+    await DB.connect(dsn)
+
+    proxies = await a_get_proxies(token)
     while 1:
         timeout = aiohttp.ClientTimeout(total=15)
         user = {}
@@ -73,9 +62,12 @@ async def main():
                             'result': result,
                         }
                         async with session.post(f'{MAIN_HOST}/api/update_user?token={token}', data=params, ssl=False) as response:
-                            logger.info(f"{user['user_id']} - {response.status}")
+                            Logger.info(f"{user['user_id']} - {response.status}")
                     else:
                         await asyncio.sleep(5)
+        except aiohttp.ClientConnectionError as exc:
+            Logger.error(f"Failed to connect to Pocket Moodle Server")
+            await asyncio.sleep(10)
         except Exception as exc:
             params = {
                 'user_id': user['user_id'],
@@ -83,10 +75,18 @@ async def main():
             }
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.post(f'{MAIN_HOST}/api/update_user?token={token}', data=params, ssl=False) as response:
-                    logger.error(f"{user.get('user_id', None)} {str(exc)}", exc_info=True)
+                    Logger.error(f"{user.get('user_id', None)} {str(exc)}", exc_info=True)
             await asyncio.sleep(5)
 
-    await aioredis.close()
+
+def run_server():
+    def root(request):
+        return web.Response(text='Ok')
+
+    asyncio.set_event_loop(asyncio.new_event_loop())
+    app = web.Application()
+    app.add_routes([web.get('/', root)])
+    web.run_app(app, handle_signals=False, port=8000)
 
 
 if __name__ == "__main__":
