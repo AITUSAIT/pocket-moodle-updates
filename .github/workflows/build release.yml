@@ -1,9 +1,8 @@
 name: ci
 
 on:
-  push:
-    branches:
-      - "dev"
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -28,7 +27,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/pocket-moodle-updates:test
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/pocket-moodle
       -
         name: Send Telegram Notify
         uses: appleboy/telegram-action@master
@@ -36,8 +35,8 @@ jobs:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: |
-            ${{ github.actor }} created commit:
-            Commit message: ${{ github.event.commits[0].message }}
+            ${{ github.event.release.author }} released ${{ github.event.release.name }} of ${{ github.repository }}:
+            
+            ${{ github.event.release.body }}
 
             Repository: ${{ github.repository }}
-            See changes: https://github.com/${{ github.repository }}/commit/${{github.sha}}

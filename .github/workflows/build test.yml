@@ -28,7 +28,13 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/pocket-moodle-updates:latest
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/pocket-moodle:test
+      - 
+        name: Extract commit messages
+        id: extract_commits
+        run: |
+            commits=$(git log --format="%s" -n 10) # You can change the number to the desired limit
+            echo "::set-output name=commits::$commits"
       -
         name: Send Telegram Notify
         uses: appleboy/telegram-action@master
@@ -36,8 +42,8 @@ jobs:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: |
-            ${{ github.actor }} created commit:
-            Commit message: ${{ github.event.commits[0].message }}
+            ${{ github.actor }} created commits:
+
+            ${{ steps.extract_commits.outputs.commits }}
 
             Repository: ${{ github.repository }}
-            See changes: https://github.com/${{ github.repository }}/commit/${{github.sha}}
