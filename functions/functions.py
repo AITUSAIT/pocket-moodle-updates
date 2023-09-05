@@ -1,8 +1,6 @@
 import asyncio
 from datetime import datetime, timedelta
-import logging
 import time
-import structlog
 
 
 def clear_MD(text):
@@ -51,27 +49,3 @@ def timeit(func):
         return result
 
     return helper
-
-
-def crypto(message: str, secret: str) -> str:
-    new_chars = list()
-    i = 0
-
-    for num_chr in (ord(c) for c in message):
-        num_chr ^= ord(secret[i])
-        new_chars.append(num_chr)
-
-        i += 1
-        if i >= len(secret):
-            i = 0
-
-    return ''.join(chr(c) for c in new_chars)
-
-
-def encrypt_xor(message: str, secret: str) -> str:
-    return crypto(message, secret).encode('utf-8').hex()
-
-
-def decrypt(message_hex: str, secret: str) -> str:
-    message = bytes.fromhex(message_hex).decode('utf-8')
-    return crypto(message, secret)
