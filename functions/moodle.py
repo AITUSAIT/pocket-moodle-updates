@@ -34,11 +34,11 @@ async def check_updates(user_id, proxy_dict: dict) -> int | str:
     courses_grades = await asyncio.gather(*[moodle.get_grades(course_id) for course_id in course_ids])
 
     await moodle.add_new_courses(courses, active_courses_ids)
-    await GradeDB.commit()
     CourseDB.get_courses.cache_clear()
     user.courses = await CourseDB.get_courses(user_id)
 
     new_grades, updated_grades = await moodle.set_grades(courses_grades)
+    await GradeDB.commit()
     if moodle.user.is_active_sub() \
         or next(count_student) == 0 \
             or notification_status.is_update_requested \
