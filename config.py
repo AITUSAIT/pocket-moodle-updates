@@ -5,11 +5,11 @@ from aiogram import Bot, types
 
 dotenv.load_dotenv()
 
-REDIS_HOST = os.getenv('REDIS_HOST')
-REDIS_PORT = os.getenv('REDIS_PORT')
-REDIS_DB = os.getenv('REDIS_DB')
-REDIS_USER = os.getenv('REDIS_USER') or ""
-REDIS_PASSWD = os.getenv('REDIS_PASSWD')
+DB_HOST = os.getenv('DB_HOST')
+DB_PORT = os.getenv('DB_PORT')
+DB_DB = os.getenv('DB_DB')
+DB_USER = os.getenv('DB_USER')
+DB_PASSWD = os.getenv('DB_PASSWD')
 
 MAIN_HOST = os.getenv('MAIN_HOST')
 token = os.getenv('token')
