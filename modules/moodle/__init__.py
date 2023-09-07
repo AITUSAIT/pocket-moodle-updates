@@ -316,7 +316,7 @@ class Moodle():
                     await DeadlineDB.update_deadline(
                         user_id=self.user.user_id,
                         course_id=course.course_id,
-                        id=assignment_id,
+                        id=int(assignment_id),
                         name=assignment_name,
                         due=datetime.strptime(assignment_due, "%A, %d %B %Y, %I:%M %p"),
                         graded=assignment_graded,

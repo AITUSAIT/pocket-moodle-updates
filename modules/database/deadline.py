@@ -32,7 +32,7 @@ class DeadlineDB(UserDB):
 
     @classmethod
     async def update_deadline(cls, user_id: int, course_id: int, id: int, name: str, due: datetime, graded: bool, submitted: bool, status: dict):
-        query = 'UPDATE user_deadlines SET name = $1 and due = $2 and graded = $3 and submitted = $4 and status = $5 WHERE id = $6 and course_id = $7 and user_id = $8'
+        query = 'UPDATE user_deadlines SET name = $1, due = $2, graded = $3, submitted = $4, status = $5 WHERE id = $6 and course_id = $7 and user_id = $8'
         cls.add_query(query, name, due, graded, submitted, json.dumps(status), id, course_id, user_id)
 
     @classmethod
