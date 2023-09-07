@@ -1,16 +1,14 @@
 from datetime import datetime
 import json
-from async_lru import alru_cache
 
 from . import UserDB
 from .models import User, Deadline
 
 
 class DeadlineDB(UserDB):
-    pending_queries = []
+    pending_queries_deadlines = []
 
     @classmethod
-    @alru_cache(ttl=5)
     async def get_deadlines(cls, value, course_id: int) -> dict[str, Deadline]:
         user: User = await cls.get_user(value)
 
@@ -39,13 +37,13 @@ class DeadlineDB(UserDB):
 
     @classmethod
     def add_query(cls, query, *params):
-        cls.pending_queries.append((query, params))
+        cls.pending_queries_deadlines.append((query, params))
 
     @classmethod
     async def commit(cls):
         async with cls.pool.acquire() as connection:
             async with connection.transaction():
-                for query, params in cls.pending_queries:
+                for query, params in cls.pending_queries_deadlines:
                     await connection.execute(query, *params)
-        cls.pending_queries.clear()
+        cls.pending_queries_deadlines.clear()
     

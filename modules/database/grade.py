@@ -1,14 +1,12 @@
-from async_lru import alru_cache
 
 from . import UserDB
 from .models import Grade, User
 
 
 class GradeDB(UserDB):
-    pending_queries = []
+    pending_queries_grades = []
 
     @classmethod
-    @alru_cache(ttl=5)
     async def get_grades(cls, user_id, course_id: int) -> dict[str, Grade]:
         user: User = await cls.get_user(user_id)
 
@@ -28,12 +26,12 @@ class GradeDB(UserDB):
 
     @classmethod
     def add_query(cls, query, *params):
-        cls.pending_queries.append((query, params))
+        cls.pending_queries_grades.append((query, params))
 
     @classmethod
     async def commit(cls):
         async with cls.pool.acquire() as connection:
             async with connection.transaction():
-                for query, params in cls.pending_queries:
+                for query, params in cls.pending_queries_grades:
                     await connection.execute(query, *params)
-        cls.pending_queries.clear()
+        cls.pending_queries_grades.clear()
