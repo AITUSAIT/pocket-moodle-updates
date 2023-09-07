@@ -235,7 +235,11 @@ class Moodle():
                 assignment_name = assign['name']
                 assignment_due = (datetime.utcfromtimestamp(assign['duedate']) + timedelta(hours=6)).strftime('%A, %d %B %Y, %I:%M %p')
                 assignment_graded = bool(int(assign['grade']))
-                submitted = True if course.deadlines.get(assignment_id, {}).submitted else await self.is_assignment_submitted(assign_id)
+
+                if not course.deadlines.get(assignment_id, None):
+                    submitted = await self.is_assignment_submitted(assign_id)
+                else:
+                    submitted = True if course.deadlines[assignment_id].submitted else await self.is_assignment_submitted(assign_id)
                 
                 url_to_assign = f'https://moodle.astanait.edu.kz/mod/assign/view.php?id={assignment_id}'
                 
