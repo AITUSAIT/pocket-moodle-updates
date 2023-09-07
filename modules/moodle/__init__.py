@@ -83,7 +83,7 @@ class Moodle():
     async def get_courses(self):
         f = 'core_enrol_get_users_courses'
         if self.user.id is None:
-                self.user.id = (await self.get_users_by_field(value=self.user.mail))[0]['id']
+            self.user.id = (await self.get_users_by_field(value=self.user.mail))[0]['id']
         params = {
             'userid': self.user.id 
         }
@@ -123,7 +123,7 @@ class Moodle():
             end_date = datetime.utcfromtimestamp(course['enddate']) + timedelta(hours=6)
             if now < end_date:
             # if now > start_date and now < end_date:
-                active_courses_ids.append(course['id'])
+                active_courses_ids.append(int(course['id']))
         return active_courses_ids
     
     async def add_new_courses(self, courses, active_courses_ids):
@@ -142,7 +142,7 @@ class Moodle():
                 if self.user.courses[str(course_id)].active != active:
                     await CourseDB.update_course(user_id=self.user.user_id, course_id=course_id, active=active)
     
-    async def set_grades(self, courses_grades):
+    async def set_grades(self, courses_grades, course_ids):
         new_grades = ['New grades:']
         updated_grades = ['Updated grades:']
 
@@ -159,7 +159,7 @@ class Moodle():
             'Course total': '4',
         }
 
-        for course_grades in [ _ for _ in courses_grades if 'tables' in courses_grades and self.user.courses[str(course_grades['courseid'])].active ]:
+        for course_grades in [ _ for _ in courses_grades if 'tables' in _ and int(_['tables'][0]['courseid']) in course_ids ]:
             course_grades = course_grades['tables'][0]
             course = self.user.courses[str(course_grades['courseid'])]
             url_to_course = f"{moodle}/grade/report/user/index.php?id={course.course_id}"
@@ -313,16 +313,17 @@ class Moodle():
                                 assign.status[key] = 1
                                 break
 
-                    await DeadlineDB.update_deadline(
-                        user_id=self.user.user_id,
-                        course_id=course.course_id,
-                        id=int(assignment_id),
-                        name=assignment_name,
-                        due=datetime.strptime(assignment_due, "%A, %d %B %Y, %I:%M %p"),
-                        graded=assignment_graded,
-                        submitted=submitted,
-                        status=assign.status
-                    )
+                    if assignment_due != assign.due.strftime('%A, %d %B %Y, %I:%M %p'):
+                        await DeadlineDB.update_deadline(
+                            user_id=self.user.user_id,
+                            course_id=course.course_id,
+                            id=int(assignment_id),
+                            name=assignment_name,
+                            due=datetime.strptime(assignment_due, "%A, %d %B %Y, %I:%M %p"),
+                            graded=assignment_graded,
+                            submitted=submitted,
+                            status=assign.status
+                        )
 
         return [updated_deadlines, new_deadlines, upcoming_deadlines]       
 

@@ -30,19 +30,19 @@ async def check_updates(user_id, proxy_dict: dict) -> int | str:
     
     courses = await moodle.get_courses()
     active_courses_ids = await moodle.get_active_courses_ids(courses)
-    course_ids = list(course['id'] for course in courses)
+    course_ids = list(int(course['id']) for course in courses)
 
     courses_ass = (await moodle.get_assignments())['courses']
-    if notifications.is_update_requested or notifications.is_newbie_requested:
-        courses_grades = await asyncio.gather(*[moodle.get_grades(course_id) for course_id in course_ids])
-    else:
-        courses_grades = await asyncio.gather(*[moodle.get_grades(course_id) for course_id in active_courses_ids])
+    if not (notifications.is_update_requested or notifications.is_newbie_requested):
+        course_ids = active_courses_ids
+    courses_grades = await asyncio.gather(*[moodle.get_grades(course_id) for course_id in course_ids])
+
 
     await moodle.add_new_courses(courses, active_courses_ids)
     CourseDB.get_courses.cache_clear()
     user.courses = await CourseDB.get_courses(user_id)
 
-    new_grades, updated_grades = await moodle.set_grades(courses_grades)
+    new_grades, updated_grades = await moodle.set_grades(courses_grades, course_ids)
     if not settings.status or not settings.notification_grade:
         new_grades, updated_grades = [], []
 
@@ -51,7 +51,7 @@ async def check_updates(user_id, proxy_dict: dict) -> int | str:
             or notifications.is_update_requested \
                 or notifications.is_newbie_requested:
         updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass)
-        if settings.status or not settings.notification_deadline:
+        if not settings.status or not settings.notification_deadline:
             updated_deadlines, new_deadlines, upcoming_deadlines = [], [], []
     
     await GradeDB.commit()
