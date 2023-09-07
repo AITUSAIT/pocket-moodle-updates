@@ -226,7 +226,7 @@ class Moodle():
             course_state3 = 0
             
             course = self.user.courses[str(course_assigns['id'])]
-            course_name = clear_MD(course['name'])
+            course_name = clear_MD(course.name)
             url_to_course = f"/course/view.php?id={course.course_id}"
 
             for assign in course_assigns['assignments']:
