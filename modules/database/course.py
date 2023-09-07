@@ -25,7 +25,13 @@ class CourseDB(DeadlineDB, GradeDB):
 
         async with cls.pool.acquire() as connection:
             courses = await connection.fetch(f'SELECT course_id, name, active FROM user_courses WHERE user_id = $1 AND (active = $2 OR $2 IS NULL)', user.user_id, is_active)
-            return { str(_[0]): Course(*_, grades=await cls.get_grades(user.user_id, _[0]), deadlines=await cls.get_deadlines(user.user_id, _[0])) for _ in courses }
+            return { str(_[0]): Course(
+                course_id=_[0],
+                name=_[1],
+                active=_[2],
+                grades=await cls.get_grades(user.user_id, _[0]),
+                deadlines=await cls.get_deadlines(user.user_id, _[0])
+            ) for _ in courses }
 
     @classmethod
     @alru_cache(ttl=5)

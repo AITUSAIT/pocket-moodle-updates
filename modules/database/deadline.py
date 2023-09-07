@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 from async_lru import alru_cache
 
 from . import UserDB
@@ -15,17 +16,26 @@ class DeadlineDB(UserDB):
 
         async with cls.pool.acquire() as connection:
             deadlines = await connection.fetch(f'SELECT id, assign_id, name, due, graded, submitted, status FROM user_deadlines WHERE user_id = $1 and course_id = $2', user.user_id, course_id)
-            return { str(_[0]): Deadline(*_) for _ in deadlines }
+
+            return { str(_[0]): Deadline(
+                id=_[0],
+                assign_id=_[1],
+                name=_[2],
+                due=_[3],
+                graded=_[4],
+                submitted=_[5],
+                status=json.dumps(_[6])
+            ) for _ in deadlines }
 
     @classmethod
     async def set_deadline(cls, user_id: int, course_id: int, id: int, assign_id: int, name: str, due: datetime, graded: bool, submitted: bool, status: dict):
         query = 'INSERT INTO user_deadlines (id, assign_id, name, due, graded, submitted, status, course_id, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)'
-        cls.add_query(query, id ,assign_id, name, due, graded, submitted, status, course_id, user_id)
+        cls.add_query(query, id ,assign_id, name, due, graded, submitted, json.dumps(status), course_id, user_id)
 
     @classmethod
     async def update_deadline(cls, user_id: int, course_id: int, id: int, name: str, due: datetime, graded: bool, submitted: bool, status: dict):
         query = 'UPDATE user_deadlines SET name = $1 and due = $2 and graded = $3 and submitted = $4 and status = $5 WHERE id = $6 and course_id = $7 and user_id = $8'
-        cls.add_query(query, name, due, graded, submitted, status, id, course_id, user_id)
+        cls.add_query(query, name, due, graded, submitted, json.dumps(status), id, course_id, user_id)
 
     @classmethod
     def add_query(cls, query, *params):
