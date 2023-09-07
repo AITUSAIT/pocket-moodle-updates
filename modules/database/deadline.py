@@ -24,7 +24,7 @@ class DeadlineDB(UserDB):
                 due=_[3],
                 graded=_[4],
                 submitted=_[5],
-                status=json.dumps(_[6])
+                status=json.loads(_[6])
             ) for _ in deadlines }
 
     @classmethod
