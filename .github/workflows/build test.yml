@@ -27,6 +27,8 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/pocket-moodle-updates:test
       - 
