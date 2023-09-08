@@ -302,7 +302,7 @@ class Moodle():
                             ['status3', timedelta(days=3)],
                         ]
 
-                        for i in enumerate(reminders_filter):
+                        for i, _ in enumerate(reminders_filter):
                             key, td = reminders_filter[i]
                             if not assign.status.get(key, 0) and diff_time>timedelta(hours=1) and diff_time<td:
                                 if not course_state3:
