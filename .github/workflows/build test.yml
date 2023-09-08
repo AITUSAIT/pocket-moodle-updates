@@ -35,8 +35,11 @@ jobs:
         name: Extract commit messages
         id: extract_commits
         run: |
-            commits=$(git log --format="%s" -n 10) # You can change the number to the desired limit
-            echo "::set-output name=commits::$commits"
+          commit_messages=()
+          for commit in $(git log --format="%s" -n 5); do
+            commit_messages+=("$commit")
+          done
+          echo "::set-output name=commit_messages::${commit_messages[@]}"
       -
         name: Send Telegram Notify
         uses: appleboy/telegram-action@master
@@ -46,6 +49,6 @@ jobs:
           message: |
             ${{ github.actor }} created commits:
 
-            ${{ steps.extract_commits.outputs.commits }}
+            ${{ steps.extract_commits.outputs.commit_messages }}
 
             Repository: ${{ github.repository }}

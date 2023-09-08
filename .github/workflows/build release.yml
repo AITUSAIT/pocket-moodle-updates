@@ -37,8 +37,6 @@ jobs:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: |
-            ${{ github.event.release.author }} released ${{ github.event.release.name }} of ${{ github.repository }}:
+            ${{ github.event.release.author.name }} released ${{ github.event.release.name }} of Pocket Moodle Updates:
             
             ${{ github.event.release.body }}
-
-            Repository: ${{ github.repository }}
