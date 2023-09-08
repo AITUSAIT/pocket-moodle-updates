@@ -36,7 +36,7 @@ jobs:
         id: extract_commits
         run: |
           commit_messages=()
-          for commit in $(git log --format="%s" -n 5); do
+          for commit in $(git log --format="%s"); do
             commit_messages+=("$commit")
           done
           echo "::set-output name=commit_messages::${commit_messages[@]}"
