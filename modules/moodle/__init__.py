@@ -305,7 +305,7 @@ class Moodle():
                                 if not course_state3:
                                     course_state3 = 1
                                     upcoming_deadlines[index_upcoming] += f"\n\n  [{course_name}]({clear_MD(url_to_course)}):"
-                                upcoming_deadlines[index_upcoming] += f"\n      [{clear_MD(assign['name'])}]({clear_MD(url_to_assign)})"
+                                upcoming_deadlines[index_upcoming] += f"\n      [{clear_MD(assign.name)}]({clear_MD(url_to_assign)})"
                                 upcoming_deadlines[index_upcoming] += f"\n      {clear_MD(assignment_due)}"
                                 upcoming_deadlines[index_upcoming] += f"\n      Remaining: {clear_MD(diff_time)}\n"
                                 if len(upcoming_deadlines[index_upcoming]) > 3000:
