@@ -1,4 +1,4 @@
-from copy import copy
+from copy import copy, deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
@@ -281,7 +281,7 @@ class Moodle():
                     diff_time = get_diff_time(assignment_due)
                     assign.graded = assignment_graded
                     assign.submitted = submitted
-                    olx_status = copy(assign.status)
+                    old_status = deepcopy(assign.status)
 
                     if not submitted:
                         if assignment_due != assign.due.strftime('%A, %d %B %Y, %I:%M %p'):
@@ -316,7 +316,7 @@ class Moodle():
                                 assign.status[key] = 1
                                 break
 
-                    if assignment_due != assign.due.strftime('%A, %d %B %Y, %I:%M %p') or olx_status != assign.status:
+                    if assignment_due != assign.due.strftime('%A, %d %B %Y, %I:%M %p') or old_status != assign.status:
                         await DeadlineDB.update_deadline(
                             user_id=self.user.user_id,
                             course_id=course.course_id,
