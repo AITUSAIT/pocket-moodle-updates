@@ -141,7 +141,8 @@ class Moodle():
             else:
                 if self.user.courses[str(course_id)].active != active:
                     await CourseDB.update_course(user_id=self.user.user_id, course_id=course_id, active=active)
-    
+        await CourseDB.commit()
+
     async def set_grades(self, courses_grades, course_ids):
         new_grades = ['New grades:']
         updated_grades = ['Updated grades:']

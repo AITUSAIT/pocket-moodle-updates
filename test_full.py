@@ -7,7 +7,7 @@ from config import DB_DB, DB_HOST, DB_PASSWD, DB_PORT, DB_USER, token
 from functions.bot import send
 from main import a_get_proxies
 from modules.database import (DB, CourseDB, DeadlineDB, GradeDB,
-                              NotificationDB, UserDB)
+                              NotificationDB, SettingsBotDB, UserDB)
 from modules.moodle import Moodle, User
 
 logs = True
@@ -33,7 +33,8 @@ async def check_updates(user_id, proxy_dict: dict):
         courses=(await CourseDB.get_courses(user_id)), 
         msg=None
     )
-    notification_status = await NotificationDB.get_notification_status(user.user_id)
+    settings = await SettingsBotDB.get_settings(user_id)
+    notifications = await NotificationDB.get_notification_status(user.user_id)
     custom_print('>>>', "get_user", time.time() - start, '\n')
 
     moodle = Moodle(user, proxy_dict)
@@ -42,7 +43,10 @@ async def check_updates(user_id, proxy_dict: dict):
     
     courses = await moodle.get_courses()
     active_courses_ids = await moodle.get_active_courses_ids(courses)
-    course_ids = list(course['id'] for course in courses)
+    course_ids = list(int(course['id']) for course in courses)
+    if not (notifications.is_update_requested or notifications.is_newbie_requested):
+        course_ids = active_courses_ids
+    courses_grades = await asyncio.gather(*[moodle.get_grades(course_id) for course_id in course_ids])
     custom_print('>>>', "get_courses", time.time() - start, '\n')
 
     courses_ass = (await moodle.get_assignments())['courses']
@@ -55,30 +59,35 @@ async def check_updates(user_id, proxy_dict: dict):
     user.courses = await CourseDB.get_courses(user_id)
     custom_print('>>>', "update_courses", time.time() - start, '\n')
 
-    new_grades, updated_grades = await moodle.set_grades(courses_grades)
+    new_grades, updated_grades = await moodle.set_grades(courses_grades, course_ids)
+    if not settings.status or not settings.notification_grade:
+        new_grades, updated_grades = [], []
     custom_print('>>>', "set_grades", time.time() - start, '\n')
 
     if moodle.user.is_active_sub() \
         or next(count_student) == 0 \
-            or notification_status.is_update_requested \
-                or notification_status.is_newbie_requested:
+            or notifications.is_update_requested \
+                or notifications.is_newbie_requested:
         updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass)
+        if not settings.status or not settings.notification_deadline:
+            updated_deadlines, new_deadlines, upcoming_deadlines = [], [], []
     custom_print('>>>', "set_deadlines", time.time() - start, '\n')
+    
     await DeadlineDB.commit()
     await GradeDB.commit()
     custom_print('>>>', "commit_grades_deadlines", time.time() - start, '\n')
     
-    if moodle.user.is_active_sub() and not notification_status.is_newbie_requested:
+    if moodle.user.is_active_sub() and not notifications.is_newbie_requested:
         for items in [new_grades, updated_grades, updated_deadlines, new_deadlines, upcoming_deadlines]:
             for item in items:
                 if len(item) > 20:
                     await send(moodle.user.user_id, item)
     custom_print('>>>', "send_messages", time.time() - start, '\n')
     
-    if notification_status.is_update_requested:
+    if notifications.is_update_requested:
         await send(moodle.user.user_id, 'Updated\!')
         await NotificationDB.set_notification_status(user.user_id, 'is_update_requested', False)
-    elif notification_status.is_newbie_requested:
+    elif notifications.is_newbie_requested:
         await send(moodle.user.user_id, 'Your courses are *ready*\!')
         await NotificationDB.set_notification_status(user.user_id, 'is_newbie_requested', False)
     custom_print('>>>', "update_notifications", time.time() - start, '\n')

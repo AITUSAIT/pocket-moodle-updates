@@ -6,6 +6,8 @@ from .models import Course
 
 
 class CourseDB(DeadlineDB, GradeDB):
+    pending_queries_courses = []
+
     @classmethod
     @alru_cache(ttl=5)
     async def is_ready_courses(cls, user_id: int) -> bool:
@@ -36,23 +38,28 @@ class CourseDB(DeadlineDB, GradeDB):
     @classmethod
     @alru_cache(ttl=5)
     async def get_course(cls, user_id: int, course_id: int) -> Course:
-        user = await cls.get_user(user_id)
-
         async with cls.pool.acquire() as connection:
-            row = await connection.fetchrow(f'SELECT id, course_id, name, active FROM user_courses WHERE user_id = $1 and course_id = $2', user.user_id, course_id)
-            return Course(id=row[0], course_id=row[1], name=row[2], active=row[3], grades=await cls.get_grades(user.user_id, row[0]), deadlines=await cls.get_deadlines(user.user_id, row[0])) if row else None
+            row = await connection.fetchrow(f'SELECT id, course_id, name, active FROM user_courses WHERE user_id = $1 and course_id = $2', user_id, course_id)
+            return Course(id=row[0], course_id=row[1], name=row[2], active=row[3], grades=await cls.get_grades(user_id, row[0]), deadlines=await cls.get_deadlines(user_id, row[0])) if row else None
     
     @classmethod
     async def set_course(cls, user_id: int, course_id: int, name: str, active: bool):
-        user = await cls.get_user(user_id)
-
-        async with cls.pool.acquire() as connection:
-            await connection.execute(f'INSERT INTO user_courses (course_id, name, active, user_id) VALUES ($1, $2, $3, $4)', course_id, name, active, user.user_id)
+        query = f'INSERT INTO user_courses (course_id, name, active, user_id) VALUES ($1, $2, $3, $4)'
+        cls.add_query(query, course_id, name, active, user_id)
     
     @classmethod
     async def update_course(cls, user_id: int, course_id: int, active: bool):
-        user = await cls.get_user(user_id)
-
-        async with cls.pool.acquire() as connection:
-            await connection.execute(f'UPDATE user_courses SET active = $1 WHERE course_id = $2 and user_id = $3', active, course_id, user.user_id)
+        query = f'UPDATE user_courses SET active = $1 WHERE course_id = $2 and user_id = $3'
+        cls.add_query(query, active, course_id, user_id)
     
+    @classmethod
+    def add_query(cls, query, *params):
+        cls.pending_queries_courses.append((query, params))
+
+    @classmethod
+    async def commit(cls):
+        async with cls.pool.acquire() as connection:
+            async with connection.transaction():
+                for query, params in cls.pending_queries_courses:
+                    await connection.execute(query, *params)
+        cls.pending_queries_courses.clear()
