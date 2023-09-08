@@ -302,7 +302,8 @@ class Moodle():
                             ['status3', timedelta(days=3)],
                         ]
 
-                        for key, td in reminders_filter:
+                        for i in enumerate(reminders_filter):
+                            key, td = reminders_filter[i]
                             if not assign.status.get(key, 0) and diff_time>timedelta(hours=1) and diff_time<td:
                                 if not course_state3:
                                     course_state3 = 1
@@ -313,7 +314,9 @@ class Moodle():
                                 if len(upcoming_deadlines[index_upcoming]) > 3000:
                                     index_upcoming += 1
                                     upcoming_deadlines.append('')
-                                assign.status[key] = 1
+                                for _ in range(i, 4):
+                                    key, td = reminders_filter[_]
+                                    assign.status[key] = 1
                                 break
 
                     if assignment_due != assign.due.strftime('%A, %d %B %Y, %I:%M %p') or old_status != assign.status:
