@@ -238,7 +238,7 @@ class Moodle():
                 assignment_due = (datetime.utcfromtimestamp(assign['duedate']) + timedelta(hours=6)).strftime('%A, %d %B %Y, %I:%M %p')
                 assignment_graded = bool(int(assign['grade']))
 
-                if not course.deadlines.get(assignment_id, None):
+                if assignment_id not in course.deadlines:
                     submitted = await self.is_assignment_submitted(assign_id)
                 else:
                     submitted = True if course.deadlines[assignment_id].submitted else await self.is_assignment_submitted(assign_id)
