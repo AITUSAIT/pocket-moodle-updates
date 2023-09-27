@@ -112,7 +112,7 @@ class Moodle():
         }
         data = await self.make_request(f, params=params)
         status = data.get('lastattempt', {}).get('submission', {}).get('status', None)
-        if status is None or status == "submitted":
+        if status == "submitted":
             return True
         return False        
 
@@ -238,10 +238,7 @@ class Moodle():
                 assignment_due = (datetime.utcfromtimestamp(assign['duedate']) + timedelta(hours=6)).strftime('%A, %d %B %Y, %I:%M %p')
                 assignment_graded = bool(int(assign['grade']))
 
-                if assignment_id not in course.deadlines:
-                    submitted = await self.is_assignment_submitted(assign_id)
-                else:
-                    submitted = True if course.deadlines[assignment_id].submitted else await self.is_assignment_submitted(assign_id)
+                submitted = await self.is_assignment_submitted(assign_id)
                 
                 url_to_assign = f'https://moodle.astanait.edu.kz/mod/assign/view.php?id={assignment_id}'
                 
