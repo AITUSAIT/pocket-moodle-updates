@@ -316,7 +316,7 @@ class Moodle():
                                     assign.status[key] = 1
                                 break
 
-                    if assignment_due != assign.due.strftime('%A, %d %B %Y, %I:%M %p') or old_status != assign.status:
+                    if assignment_due != assign.due.strftime('%A, %d %B %Y, %I:%M %p') or old_status != assign.status or assign.submitted != submitted:
                         await DeadlineDB.update_deadline(
                             user_id=self.user.user_id,
                             course_id=course.course_id,
