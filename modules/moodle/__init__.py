@@ -33,13 +33,15 @@ class Moodle():
         try:
             await self.check_api_token()
         except exceptions.WrongToken:
-            text = f"Wrong *Moodle Key*, seems like you try register one more time❗️"
-            await send(self.user.user_id, text, True)
+            # text = f"Wrong *Moodle Key*, seems like you need to try register one more time❗️"
+            # await send(self.user.user_id, text, True)
             return False
         except exceptions.WrongMail:
-            text = f"*Email* or *Barcode* not valid, seems like you try register one more time❗️"
-            await send(self.user.user_id, text, True)
-            return False    
+            # text = f"*Email* or *Barcode* not valid, seems like you need to try register one more time❗️"
+            # await send(self.user.user_id, text, True)
+            return False
+        except:
+            return False  
         else:
             return True
 
