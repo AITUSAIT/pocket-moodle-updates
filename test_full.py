@@ -46,7 +46,6 @@ async def check_updates(user_id, proxy_dict: dict):
     course_ids = list(int(course['id']) for course in courses)
     if not (notifications.is_update_requested or notifications.is_newbie_requested):
         course_ids = active_courses_ids
-    courses_grades = await asyncio.gather(*[moodle.get_grades(course_id) for course_id in course_ids])
     custom_print('>>>', "get_courses", time.time() - start, '\n')
 
     courses_ass = (await moodle.get_assignments())['courses']
