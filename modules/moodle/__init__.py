@@ -1,3 +1,4 @@
+import asyncio
 from copy import copy, deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -115,8 +116,8 @@ class Moodle():
         data = await self.make_request(f, params=params)
         status = data.get('lastattempt', {}).get('submission', {}).get('status', None)
         if status == "submitted":
-            return True
-        return False        
+            return True, id
+        return False, id        
 
     async def get_active_courses_ids(self, courses) -> tuple[int]:
         active_courses_ids = []
@@ -233,6 +234,14 @@ class Moodle():
             course_name = clear_MD(course.name)
             url_to_course = f"/course/view.php?id={course.course_id}"
 
+            assignment_ids_to_check = [str(assign['id']) for assign in course_assigns['assignments']]
+
+            check_tasks = [self.is_assignment_submitted(assign_id) for assign_id in assignment_ids_to_check]
+            results = await asyncio.gather(*check_tasks)
+            submitted_dict = {
+                id: submitted for submitted, id in results 
+            }
+
             for assign in course_assigns['assignments']:
                 assign_id = str(assign['id'])
                 assignment_id = str(assign['cmid'])
@@ -240,7 +249,7 @@ class Moodle():
                 assignment_due = (datetime.utcfromtimestamp(assign['duedate']) + timedelta(hours=6)).strftime('%A, %d %B %Y, %I:%M %p')
                 assignment_graded = bool(int(assign['grade']))
 
-                submitted = await self.is_assignment_submitted(assign_id)
+                submitted = submitted_dict[assign_id]
                 
                 url_to_assign = f'https://moodle.astanait.edu.kz/mod/assign/view.php?id={assignment_id}'
                 
