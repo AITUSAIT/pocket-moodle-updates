@@ -17,7 +17,8 @@ Logger.load_config()
 
 
 async def a_get_proxies(token: str):
-    server_data = (await ServerDB.get_servers()).get(token)
+    servers = await ServerDB.get_servers()
+    server_data = servers.get(token)
 
     if server_data:
         return cycle(server_data.proxies)
@@ -53,16 +54,17 @@ async def main():
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.get(f'{MAIN_HOST}/api/get_user?token={token}', ssl=False) as response:
                     if response.status == 200:
+                        proxy = next(proxies)
                         data = await response.json()
                         user = data['user']
                         os.environ["ATT_STATE"] = "1"
-                        result = await run_check(user, next(proxies))
+                        result = await run_check(user, proxy)
                         params = {
                             'user_id': user['user_id'],
                             'result': result,
                         }
                         async with session.post(f'{MAIN_HOST}/api/update_user?token={token}', data=params, ssl=False) as response:
-                            Logger.info(f"{user['user_id']} - {response.status}")
+                            Logger.info(f"{user['user_id']} - {response.status} - {proxy['ip']}")
                     else:
                         await asyncio.sleep(5)
         except aiohttp.ClientConnectionError as exc:
