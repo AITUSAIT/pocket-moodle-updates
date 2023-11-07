@@ -36,7 +36,7 @@ class Moodle():
             await self.check_api_token()
         except exceptions.WrongToken:
             if self.notifications.error_check_token:
-                text = f"Wrong *Moodle Key*, seems like you need to try register one more time❗️"
+                text = "Wrong *Moodle Key*, seems like you need to try register one more time❗️"
                 await send(self.user.user_id, text, True)
             return False
         except exceptions.WrongMail:
