@@ -41,7 +41,7 @@ class Moodle():
             return False
         except exceptions.WrongMail:
             if self.notifications.error_check_token:
-                text = f"*Email* or *Barcode* not valid, seems like you need to try register one more time❗️"
+                text = "*Email* or *Barcode* not valid, seems like you need to try register one more time❗️"
                 await send(self.user.user_id, text, True)
             return False
         except exceptions.MoodleConnectionFailed:
