@@ -8,7 +8,7 @@ class NotificationDB(UserDB):
         user: User = await cls.get_user(user_id)
 
         async with cls.pool.acquire() as connection:
-            _ = await connection.fetchrow('SELECT status, is_newbie_requested, is_update_requested, is_end_date FROM user_notification WHERE user_id = $1', user.user_id)
+            _ = await connection.fetchrow('SELECT status, is_newbie_requested, is_update_requested, is_end_date, error_check_token FROM user_notification WHERE user_id = $1', user.user_id)
             return NotificationStatus(*_)
 
     @classmethod

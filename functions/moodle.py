@@ -24,7 +24,7 @@ async def check_updates(user_id, proxy_dict: dict) -> int | str:
     settings = await SettingsBotDB.get_settings(user_id)
     notifications = await NotificationDB.get_notification_status(user.user_id)
 
-    moodle = Moodle(user, proxy_dict)
+    moodle = Moodle(user, proxy_dict, notifications)
     if not await moodle.check():
         return -1 
     
