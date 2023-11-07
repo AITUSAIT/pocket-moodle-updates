@@ -41,6 +41,14 @@ class Moodle():
             # text = f"*Email* or *Barcode* not valid, seems like you need to try register one more time❗️"
             # await send(self.user.user_id, text, True)
             return False
+        except exceptions.MoodleConnectionFailed:
+            # text = f"Wrong *Moodle Key*, seems like you need to try register one more time❗️"
+            # await send(self.user.user_id, text, True)
+            return False
+        except exceptions.TimeoutMoodle:
+            # text = f"*Email* or *Barcode* not valid, seems like you need to try register one more time❗️"
+            # await send(self.user.user_id, text, True)
+            return False
         except:
             return False  
         else:
@@ -74,12 +82,11 @@ class Moodle():
 
     async def check_api_token(self):
         result: list | dict  = await self.get_users_by_field(value=self.user.mail, field='email')
-
-        if type(result) is not list:
-            if result.get('errorcode') == 'invalidtoken':
-                raise exceptions.WrongToken
-            if result.get('errorcode') == 'invalidparameter':
-                raise exceptions.WrongMail
+            
+        if result.get('errorcode') == 'invalidtoken':
+            raise exceptions.WrongToken
+        if result.get('errorcode') == 'invalidparameter':
+            raise exceptions.WrongMail
             
         if len(result) != 1:
             raise exceptions.WrongMail
