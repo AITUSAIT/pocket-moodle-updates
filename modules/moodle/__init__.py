@@ -11,7 +11,7 @@ from functions.bot import send
 from functions.functions import clear_MD, get_diff_time, replace_grade_name
 from modules.database import CourseDB, DeadlineDB, GradeDB
 
-from ..database.models import Course
+from ..database.models import Course, NotificationStatus
 from ..database.models import User as UserModel
 from . import exceptions
 
@@ -24,22 +24,29 @@ class User(UserModel):
 
 
 class Moodle():
-    def __init__(self, user, proxy_dict: dict) -> None:
+    def __init__(self, user, proxy_dict: dict, notifications: NotificationStatus) -> None:
         self.user: User = user
         self.host = 'https://moodle.astanait.edu.kz/'
         self.user.msg = None
         self.proxy_dict = proxy_dict
+        self.notifications = notifications
 
     async def check(self):
         try:
             await self.check_api_token()
         except exceptions.WrongToken:
-            # text = f"Wrong *Moodle Key*, seems like you need to try register one more time❗️"
-            # await send(self.user.user_id, text, True)
+            if self.notifications.error_check_token:
+                text = "Wrong *Moodle Key*, seems like you need to try register one more time❗️"
+                await send(self.user.user_id, text, True)
             return False
         except exceptions.WrongMail:
-            # text = f"*Email* or *Barcode* not valid, seems like you need to try register one more time❗️"
-            # await send(self.user.user_id, text, True)
+            if self.notifications.error_check_token:
+                text = "*Email* or *Barcode* not valid, seems like you need to try register one more time❗️"
+                await send(self.user.user_id, text, True)
+            return False
+        except exceptions.MoodleConnectionFailed:
+            return False
+        except exceptions.TimeoutMoodle:
             return False
         except exceptions.MoodleConnectionFailed:
             # text = f"Wrong *Moodle Key*, seems like you need to try register one more time❗️"
