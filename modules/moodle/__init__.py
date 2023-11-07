@@ -10,6 +10,7 @@ from config import IS_PROXY
 from functions.bot import send
 from functions.functions import clear_MD, get_diff_time, replace_grade_name
 from modules.database import CourseDB, DeadlineDB, GradeDB
+from modules.database.notification import NotificationDB
 
 from ..database.models import Course, NotificationStatus
 from ..database.models import User as UserModel
@@ -35,22 +36,16 @@ class Moodle():
         try:
             await self.check_api_token()
         except exceptions.WrongToken:
-            if self.notifications.error_check_token:
+            if not self.notifications.error_check_token:
+                await NotificationDB.set_notification_status(self.user.user_id, 'error_check_token', True)
                 text = "Wrong *Moodle Key*, seems like you need to try register one more time❗️"
                 await send(self.user.user_id, text, True)
             return False
         except exceptions.WrongMail:
-            if self.notifications.error_check_token:
+            if not self.notifications.error_check_token:
+                await NotificationDB.set_notification_status(self.user.user_id, 'error_check_token', True)
                 text = "*Email* or *Barcode* not valid, seems like you need to try register one more time❗️"
                 await send(self.user.user_id, text, True)
-            return False
-        except exceptions.MoodleConnectionFailed:
-            return False
-        except exceptions.TimeoutMoodle:
-            return False
-        except exceptions.MoodleConnectionFailed:
-            return False
-        except exceptions.TimeoutMoodle:
             return False
         except exceptions.MoodleConnectionFailed:
             return False
@@ -89,11 +84,12 @@ class Moodle():
 
     async def check_api_token(self):
         result: list | dict  = await self.get_users_by_field(value=self.user.mail, field='email')
-            
-        if result.get('errorcode') == 'invalidtoken':
-            raise exceptions.WrongToken
-        if result.get('errorcode') == 'invalidparameter':
-            raise exceptions.WrongMail
+        
+        if type(result) is not list:
+            if result.get('errorcode') == 'invalidtoken':
+                raise exceptions.WrongToken
+            if result.get('errorcode') == 'invalidparameter':
+                raise exceptions.WrongMail
             
         if len(result) != 1:
             raise exceptions.WrongMail
