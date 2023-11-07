@@ -49,12 +49,8 @@ class Moodle():
         except exceptions.TimeoutMoodle:
             return False
         except exceptions.MoodleConnectionFailed:
-            # text = f"Wrong *Moodle Key*, seems like you need to try register one more time❗️"
-            # await send(self.user.user_id, text, True)
             return False
         except exceptions.TimeoutMoodle:
-            # text = f"*Email* or *Barcode* not valid, seems like you need to try register one more time❗️"
-            # await send(self.user.user_id, text, True)
             return False
         except:
             return False  
