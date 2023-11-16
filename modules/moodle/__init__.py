@@ -56,7 +56,7 @@ class Moodle():
         else:
             return True
 
-    async def make_request(self, function=None, token=None, params=None, headers=None, is_du=False, host='https://moodle.astanait.edu.kz', end_point='/webservice/rest/server.php/') -> dict:
+    async def make_request(self, function=None, token=None, params=None, headers=None, is_du=False, host='https://moodle.astanait.edu.kz', end_point='/webservice/rest/server.php/', timeout: int = 5) -> dict:
         if not token:
             token = self.user.api_token
         if is_du:
@@ -65,9 +65,9 @@ class Moodle():
             args = {'moodlewsrestformat': 'json', 'wstoken': token, 'wsfunction': function}
             if params:
                 args.update(params)
-        timeout = aiohttp.ClientTimeout(total=5)
+        timeout_total = aiohttp.ClientTimeout(total=timeout)
         proxy = f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}" if IS_PROXY else None
-        async with aiohttp.ClientSession(host, timeout=timeout, headers=headers) as session:
+        async with aiohttp.ClientSession(host, timeout=timeout_total, headers=headers) as session:
             if args:
                 r = await session.get(end_point, params=args, proxy=proxy)
             else:
@@ -80,7 +80,7 @@ class Moodle():
             'field': field,
             'values[0]': value
         }
-        return await self.make_request(function=f, params=params)
+        return await self.make_request(function=f, params=params, timeout=10)
 
     async def check_api_token(self):
         result: list | dict  = await self.get_users_by_field(value=self.user.mail, field='email')
@@ -101,7 +101,7 @@ class Moodle():
         params = {
             'userid': self.user.id 
         }
-        return await self.make_request(f, params=params)
+        return await self.make_request(f, params=params, timeout=10)
 
     async def get_grades(self, courseid):
         f = 'gradereport_user_get_grades_table'
@@ -116,7 +116,7 @@ class Moodle():
 
     async def get_assignments(self):
         f = 'mod_assign_get_assignments'
-        return await self.make_request(f)
+        return await self.make_request(f, timeout=10)
     
     async def is_assignment_submitted(self, id):
         f = 'mod_assign_get_submission_status'
