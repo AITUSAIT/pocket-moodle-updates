@@ -2,6 +2,7 @@ import asyncio
 import os
 import threading
 from itertools import cycle
+import traceback
 
 import aiohttp
 from aiohttp import web
@@ -32,6 +33,7 @@ async def run_check(user, proxy_dict: dict) -> str:
     except aiohttp.ClientConnectionError:
         res = 'MOODLE CONNECTION FAILED'
     except asyncio.exceptions.TimeoutError:
+        traceback.print_exc()
         res = 'TIMEOUT MOODLE'
     else:
         if result == 1:
