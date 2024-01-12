@@ -20,14 +20,15 @@ Logger.load_config()
 async def a_get_proxies(token: str):
     servers = await ServerDB.get_servers()
     server_data = servers.get(token)
+    server_data.proxies.append(None)
 
     if server_data:
         return cycle(server_data.proxies)
     else:
-        return None
+        return cycle([None])
 
 
-async def run_check(user, proxy_dict: dict) -> str:
+async def run_check(user, proxy_dict: dict | None) -> str:
     try:
         result = await check_updates(user['user_id'], proxy_dict)
     except aiohttp.ClientConnectionError:
@@ -66,7 +67,7 @@ async def main():
                             'result': result,
                         }
                         async with session.post(f'{MAIN_HOST}/api/update_user?token={token}', data=params, ssl=False) as response:
-                            Logger.info(f"{user['user_id']} - {response.status} - {proxy['ip']}")
+                            Logger.info(f"{user['user_id']} - {response.status} - {proxy.get('ip') if proxy else None}")
                     else:
                         await asyncio.sleep(5)
         except aiohttp.ClientConnectionError as exc:
@@ -74,7 +75,7 @@ async def main():
             await asyncio.sleep(10)
         except Exception as exc:
             params = {
-                'user_id': user['user_id'],
+                'user_id': user.get('user_id'),
                 'result': 'Error',
             }
             async with aiohttp.ClientSession(timeout=timeout) as session:

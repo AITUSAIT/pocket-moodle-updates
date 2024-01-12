@@ -14,7 +14,7 @@ DB_PASSWD = os.getenv('DB_PASSWD')
 MAIN_HOST = os.getenv('MAIN_HOST')
 token = os.getenv('token')
 
-TOKEN = os.getenv('TOKEN')
+TOKEN = os.getenv('TOKEN_bot')
 
 IS_PROXY = bool(int(os.getenv('IS_PROXY')))
 

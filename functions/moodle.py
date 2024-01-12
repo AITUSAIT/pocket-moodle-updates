@@ -9,7 +9,7 @@ from modules.moodle import Moodle, User
 count_student = cycle([0, 1, 2])
 
 
-async def check_updates(user_id, proxy_dict: dict) -> int | str:
+async def check_updates(user_id, proxy_dict: dict | None) -> int | str:
     _ = await UserDB.get_user(user_id)
     user: User = User(
         user_id=_.user_id,
@@ -39,7 +39,6 @@ async def check_updates(user_id, proxy_dict: dict) -> int | str:
 
 
     await moodle.add_new_courses(courses, active_courses_ids)
-    CourseDB.get_courses.cache_clear()
     user.courses = await CourseDB.get_courses(user_id)
 
     new_grades, updated_grades = await moodle.set_grades(courses_grades, course_ids)
@@ -54,8 +53,8 @@ async def check_updates(user_id, proxy_dict: dict) -> int | str:
         if not settings.status or not settings.notification_deadline:
             updated_deadlines, new_deadlines, upcoming_deadlines = [], [], []
     
-    await GradeDB.commit()
     await DeadlineDB.commit()
+    await GradeDB.commit()
 
     if moodle.user.is_active_sub() and not notifications.is_newbie_requested:
         for items in [new_grades, updated_grades, updated_deadlines, new_deadlines, upcoming_deadlines]:
