@@ -25,7 +25,7 @@ class User(UserModel):
 
 
 class Moodle():
-    def __init__(self, user, proxy_dict: dict, notifications: NotificationStatus) -> None:
+    def __init__(self, user, proxy_dict: dict | None, notifications: NotificationStatus) -> None:
         self.user: User = user
         self.host = 'https://moodle.astanait.edu.kz/'
         self.user.msg = None
@@ -146,7 +146,7 @@ class Moodle():
             active = True if int(course_id) in active_courses_ids else False
             
             if str(course_id) not in self.user.courses:
-                await CourseDB.set_course(
+                CourseDB.set_course(
                     user_id=self.user.user_id,
                     course_id=int(course_id),
                     name=course['shortname'],
@@ -154,7 +154,7 @@ class Moodle():
                 )
             else:
                 if self.user.courses[str(course_id)].active != active:
-                    await CourseDB.update_course(user_id=self.user.user_id, course_id=course_id, active=active)
+                    CourseDB.update_course_user_pair(user_id=self.user.user_id, course_id=course_id, active=active)
         await CourseDB.commit()
 
     async def set_grades(self, courses_grades, course_ids):
@@ -277,7 +277,7 @@ class Moodle():
                                 index_new += 1
                                 new_deadlines.append('')
 
-                    await DeadlineDB.set_deadline(
+                    DeadlineDB.set_deadline(
                         user_id=self.user.user_id,
                         course_id=course.course_id,
                         id=int(assignment_id),
@@ -340,7 +340,6 @@ class Moodle():
                     if assignment_due != assign.due.strftime('%A, %d %B %Y, %I:%M %p') or old_status != assign.status or assign.submitted != submitted:
                         await DeadlineDB.update_deadline(
                             user_id=self.user.user_id,
-                            course_id=course.course_id,
                             id=int(assignment_id),
                             name=assignment_name,
                             due=datetime.strptime(assignment_due, "%A, %d %B %Y, %I:%M %p"),
