@@ -20,7 +20,6 @@ Logger.load_config()
 async def a_get_proxies(token: str):
     servers = await ServerDB.get_servers()
     server_data = servers.get(token)
-    server_data.proxies.append(None)
 
     if server_data:
         return cycle(server_data.proxies)
