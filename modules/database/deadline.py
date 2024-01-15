@@ -19,7 +19,7 @@ class DeadlineDB(UserDB):
             FROM
                 deadlines d
             INNER JOIN
-                deadlines_user_pair dp ON dp.user_id = $1 
+                deadlines_user_pair dp ON dp.id = d.id
             WHERE
                 dp.user_id = $1 and d.course_id = $2
             ''', user_id, course_id)
@@ -57,7 +57,7 @@ class DeadlineDB(UserDB):
         cls.add_query(query, user_id, id, submitted, graded, json.dumps(status))
     
     @classmethod
-    async def update_deadline(cls, user_id: int, id: int, name: str, due: datetime, graded: bool, submitted: bool, status: dict):
+    def update_deadline(cls, user_id: int, id: int, name: str, due: datetime, graded: bool, submitted: bool, status: dict):
         query = '''
         UPDATE
             deadlines
