@@ -1,5 +1,5 @@
-from dataclasses import asdict, dataclass
 import json
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from typing import TypedDict
 
@@ -22,19 +22,19 @@ class User:
     def is_newbie(self) -> bool:
         register_date = self.register_date
         return datetime.now() - register_date < timedelta(days=14)
-    
+
     def is_active_sub(self) -> bool:
         return self.sub_end_date is not None and self.sub_end_date > datetime.now()
 
     def has_api_token(self) -> bool:
         return self.api_token is not None
-    
+
     def to_json(self) -> str:
         return json.dumps(asdict(self), cls=UserJSONEncoder)
 
     def to_dict(self):
         return json.loads(self.to_json())
-    
+
     def __hash__(self) -> int:
         return hash((self.user_id))
 
@@ -111,3 +111,39 @@ class Transaction(TypedDict):
     user_id: int
     message_id: int
     user_mail: str
+
+
+@dataclass
+class CourseContent:
+    id: int
+    name: str
+    section: int
+    modules: dict[str, 'CourseContentModule']
+
+
+@dataclass
+class CourseContentModule:
+    id: int
+    url: str
+    name: str
+    modplural: str
+    modname: str
+    files: dict[str, 'CourseContentModuleFile']
+    urls: dict[str, 'CourseContentModuleUrl']
+
+
+@dataclass
+class CourseContentModuleFile:
+    filename: str
+    filesize: int
+    fileurl: str
+    timecreated: int
+    timemodified: int
+    mimetype: str
+    bytes: bytes  # Assuming bytes field is of type bytea in your database
+
+
+@dataclass
+class CourseContentModuleUrl:
+    name: str
+    url: str

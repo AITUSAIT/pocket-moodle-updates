@@ -17,6 +17,7 @@ token = os.getenv('token')
 TOKEN = os.getenv('TOKEN_bot')
 
 IS_PROXY = bool(int(os.getenv('IS_PROXY')))
+IS_UPDATE_CONTENT = bool(int(os.getenv('IS_UPDATE_CONTENT')))
 
 
 bot = Bot(token=TOKEN, parse_mode=types.ParseMode.MARKDOWN_V2)
