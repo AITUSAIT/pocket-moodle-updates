@@ -96,15 +96,15 @@ async def update_course_contents(proxy_dict: dict | None):
                                 content_file_timecreated = content_file["timecreated"]
                                 content_file_timemodified = content_file["timemodified"]
                                 content_file_mimetype = content_file["mimetype"]
-                                try:
-                                    content_file_bytes = await get_file(content_file_fileurl, moodle.user.api_token, proxy_dict)
-                                except:
-                                    print()
-                                    continue
-                                print("Downloaded")
-                                print()
 
                                 if not await CourseContentDB.if_course_content_module_file_exist(content_file_fileurl):
+                                    try:
+                                        content_file_bytes = await get_file(content_file_fileurl, moodle.user.api_token, proxy_dict)
+                                    except:
+                                        print()
+                                        continue
+                                    print("Downloaded")
+                                    print()
                                     await CourseContentDB.insert_course_content_module_file(
                                         module_id=module_id,
                                         filename=content_file_filename,
