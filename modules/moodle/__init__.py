@@ -2,6 +2,7 @@ import asyncio
 from copy import copy, deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Any
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -127,7 +128,14 @@ class Moodle():
         status = data.get('lastattempt', {}).get('submission', {}).get('status', None)
         if status == "submitted":
             return True, id
-        return False, id        
+        return False, id
+    
+    async def course_get_contents(self, course_id: int) -> dict[str, Any]:
+        f = 'core_course_get_contents'
+        params = {
+            'courseid': course_id,
+        }
+        return await self.make_request(function=f, params=params)        
 
     async def get_active_courses_ids(self, courses) -> tuple[int]:
         active_courses_ids = []
