@@ -89,6 +89,8 @@ async def update_course_contents(proxy_dict: dict | None):
                         
                         for content_file_or_url in module.get("contents", []):
                             if content_file_or_url["type"] == "file":
+                                if "mimetype" not in content_file_or_url:
+                                    continue
                                 content_file = content_file_or_url
                                 content_file_filename = content_file["filename"]
                                 content_file_fileurl = content_file["fileurl"]
