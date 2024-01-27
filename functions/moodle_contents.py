@@ -26,12 +26,12 @@ async def get_file(url: str, token: str, proxy_dict: dict[str, Any]) -> bytes:
 
 async def update_course_contents(proxy_dict: dict | None):
     users = await UserDB.get_users()
-    users: list[User] = shuffle(users)
+    shuffle(users)
 
     updated_courses_ids = []
 
     for _ in users:
-        Logger.info(f"== {_.user_id=} =======================")
+        Logger.info(f"=========== {_.user_id=} ==============")
         if not _.api_token:
             continue
         
@@ -53,7 +53,6 @@ async def update_course_contents(proxy_dict: dict | None):
         active_courses_ids: tuple[int] = await moodle.get_active_courses_ids(courses)
         
         for course_id in [ cid for cid in active_courses_ids if cid not in updated_courses_ids ]:
-            Logger.info(f"{course_id=}")
             updated_courses_ids.append(course_id)
             
             contents = None
@@ -166,5 +165,4 @@ async def update_course_contents(proxy_dict: dict | None):
                                         name=content_url_name,
                                         url=content_url_url,
                                     )
-        Logger.info()
                                 
