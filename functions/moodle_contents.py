@@ -1,3 +1,5 @@
+from random import shuffle
+from modules.logger import Logger
 from typing import Any
 import aiohttp
 from config import IS_PROXY
@@ -24,13 +26,15 @@ async def get_file(url: str, token: str, proxy_dict: dict[str, Any]) -> bytes:
 
 async def update_course_contents(proxy_dict: dict | None):
     users = await UserDB.get_users()
+    shuffle(users)
 
     updated_courses_ids = []
 
     for _ in users:
+        Logger.info(f"=========== {_.user_id=} ==============")
         if not _.api_token:
             continue
-        print(f"{_.user_id=}")
+        
         user: User = User(
             user_id=_.user_id,
             api_token=_.api_token,
@@ -49,7 +53,6 @@ async def update_course_contents(proxy_dict: dict | None):
         active_courses_ids: tuple[int] = await moodle.get_active_courses_ids(courses)
         
         for course_id in [ cid for cid in active_courses_ids if cid not in updated_courses_ids ]:
-            print(f"{course_id=}")
             updated_courses_ids.append(course_id)
             
             contents = None
@@ -60,7 +63,6 @@ async def update_course_contents(proxy_dict: dict | None):
             else:
                 for content in contents:
                     content_id = content["id"]
-                    print(f"{content_id=}")
                     content_name = content["name"]
                     content_section = content["section"]
                     
@@ -73,7 +75,6 @@ async def update_course_contents(proxy_dict: dict | None):
 
                     for module in content.get("modules", []):
                         module_id = module["id"]
-                        print(f"{module_id=}")
                         module_name = module["name"]
                         module_url = module.get("url", None)
                         module_modname = module["modname"]
@@ -95,8 +96,6 @@ async def update_course_contents(proxy_dict: dict | None):
                                 content_file = content_file_or_url
                                 content_file_filename = content_file["filename"]
                                 content_file_fileurl = content_file["fileurl"]
-                                print(f"{content_file_filename=}")
-                                print(f"{content_file_fileurl=}")
                                 content_file_filesize = content_file["filesize"]
                                 content_file_timecreated = content_file["timecreated"]
                                 content_file_timemodified = content_file["timemodified"]
@@ -106,10 +105,8 @@ async def update_course_contents(proxy_dict: dict | None):
                                     try:
                                         content_file_bytes = await get_file(content_file_fileurl, moodle.user.api_token, proxy_dict)
                                     except:
-                                        print()
                                         continue
-                                    print("Downloaded")
-                                    print()
+                                    Logger.info(f"{content_id=} {module_id} {content_file_filename} Downloaded\n")
                                     await CourseContentDB.insert_course_content_module_file(
                                         module_id=module_id,
                                         filename=content_file_filename,
@@ -120,6 +117,52 @@ async def update_course_contents(proxy_dict: dict | None):
                                         mimetype=content_file_mimetype,
                                         bytes=content_file_bytes,
                                     )
-                            elif content_file_or_url["type"] == "file":
+                                
+                                files = await CourseContentDB.get_course_content_module_files(module_id)
+                                file = files.get(content_file_fileurl)
+                                if not file:
+                                    continue
+                                
+                                if file.filesize != content_file_filesize:
+                                    try:
+                                        content_file_bytes = await get_file(content_file_fileurl, moodle.user.api_token, proxy_dict)
+                                    except:
+                                        continue
+                                    Logger.info(f"{content_id=} {module_id} {content_file_filename} Updated\n")
+                                    await CourseContentDB.update_course_content_module_file(
+                                        module_id=module_id,
+                                        filename=content_file_filename,
+                                        filesize=content_file_filesize,
+                                        fileurl=content_file_fileurl,
+                                        timecreated=content_file_timecreated,
+                                        timemodified=content_file_timemodified,
+                                        mimetype=content_file_mimetype,
+                                        bytes=content_file_bytes,
+                                    )
+                                
+                            elif content_file_or_url["type"] == "url":
                                 content_url = content_file_or_url
+                                content_url_name = content_url["filename"]
+                                content_url_url = content_url["fileurl"]
+                                
+                                if not await CourseContentDB.if_course_content_module_url_exist(content_url_url):
+                                    Logger.info(f"{content_id=} {module_id} {content_url_name} Saved\n")
+                                    await CourseContentDB.insert_course_content_module_url(
+                                        module_id=module_id,
+                                        name=content_url_name,
+                                        url=content_url_url,
+                                    )
+                                
+                                urls = await CourseContentDB.get_course_content_module_urls(module_id)
+                                url = urls.get(content_url_url)
+                                if not url:
+                                    continue
+                                
+                                if url.name != content_url_name:
+                                    Logger.info(f"{content_id=} {module_id} {content_file_filename} Updated\n")
+                                    await CourseContentDB.update_course_content_module_url(
+                                        module_id=module_id,
+                                        name=content_url_name,
+                                        url=content_url_url,
+                                    )
                                 
