@@ -30,8 +30,6 @@ async def update_course_contents(proxy_dict: dict | None):
     for _ in users:
         if not _.api_token:
             continue
-        if not await moodle.check():
-            continue
         print(f"{_.user_id=}")
         user: User = User(
             user_id=_.user_id,
@@ -45,7 +43,8 @@ async def update_course_contents(proxy_dict: dict | None):
         )
         notifications = await NotificationDB.get_notification_status(user.user_id)
         moodle = Moodle(user, proxy_dict, notifications)
-        
+        if not await moodle.check():
+            continue
         courses = await moodle.get_courses()
         active_courses_ids: tuple[int] = await moodle.get_active_courses_ids(courses)
         
