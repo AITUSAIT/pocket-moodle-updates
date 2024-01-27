@@ -26,12 +26,15 @@ async def get_file(url: str, token: str, proxy_dict: dict[str, Any]) -> bytes:
 
 async def update_course_contents(proxy_dict: dict | None):
     users = await UserDB.get_users()
-    users = shuffle(users)
+    users: list[User] = shuffle(users)
 
     updated_courses_ids = []
 
     for _ in users:
         Logger.info(f"== {_.user_id=} =======================")
+        if not _.api_token:
+            continue
+        
         user: User = User(
             user_id=_.user_id,
             api_token=_.api_token,
@@ -44,7 +47,8 @@ async def update_course_contents(proxy_dict: dict | None):
         )
         notifications = await NotificationDB.get_notification_status(user.user_id)
         moodle = Moodle(user, proxy_dict, notifications)
-        
+        if not await moodle.check():
+            continue
         courses = await moodle.get_courses()
         active_courses_ids: tuple[int] = await moodle.get_active_courses_ids(courses)
         
@@ -88,6 +92,8 @@ async def update_course_contents(proxy_dict: dict | None):
                         
                         for content_file_or_url in module.get("contents", []):
                             if content_file_or_url["type"] == "file":
+                                if "mimetype" not in content_file_or_url:
+                                    continue
                                 content_file = content_file_or_url
                                 content_file_filename = content_file["filename"]
                                 content_file_fileurl = content_file["fileurl"]
