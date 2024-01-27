@@ -83,6 +83,7 @@ async def update_course_contents(proxy_dict: dict | None):
                         
                         if not await CourseContentDB.if_course_content_module_exist(module_id):
                             await CourseContentDB.insert_course_content_module(
+                                module_id=module_id,
                                 content_id=content_id,
                                 url=module_url,
                                 name=module_name,
