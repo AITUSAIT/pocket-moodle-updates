@@ -134,6 +134,7 @@ class CourseContentModule:
 
 @dataclass
 class CourseContentModuleFile:
+    id: int
     filename: str
     filesize: int
     fileurl: str
@@ -145,5 +146,6 @@ class CourseContentModuleFile:
 
 @dataclass
 class CourseContentModuleUrl:
+    id: int
     name: str
     url: str
