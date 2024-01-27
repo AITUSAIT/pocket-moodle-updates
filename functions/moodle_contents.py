@@ -71,6 +71,7 @@ async def update_course_contents(proxy_dict: dict | None):
                             course_id=course_id,
                             name=content_name,
                             section=content_section,
+                            content_id=content_id,
                         )
 
                     for module in content.get("modules", []):
