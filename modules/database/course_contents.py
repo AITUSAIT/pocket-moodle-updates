@@ -29,7 +29,7 @@ class CourseContentDB(CourseDB):
         async with cls.pool.acquire() as connection:
             content_id = await connection.fetchval(
                 '''
-                INSERT INTO courses_contents (content_id, name, section, course_id)
+                INSERT INTO courses_contents (id, name, section, course_id)
                 VALUES ($1, $2, $3, $4)
                 RETURNING id;
                 ''',
