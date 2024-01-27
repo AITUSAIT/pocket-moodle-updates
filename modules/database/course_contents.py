@@ -184,7 +184,7 @@ class CourseContentDB(CourseDB):
     @classmethod
     async def get_course_content_module_urls(cls, module_id: int) -> dict[str, CourseContentModuleUrl]:
         async with cls.pool.acquire() as connection:
-            urls = await connection.fetch(f'''
+            urls = await connection.fetch('''
             SELECT
                 u.name, u.url
             FROM
