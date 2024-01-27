@@ -84,7 +84,10 @@ async def main():
                 await asyncio.sleep(5)
     else:
         while 1:
-            await update_course_contents(next(proxies))
+            try:
+                await update_course_contents(next(proxies))
+            except:
+                ...
             await asyncio.sleep(60*60)
 
 def run_server():
