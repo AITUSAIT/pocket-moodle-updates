@@ -125,21 +125,22 @@ class CourseContentDB(CourseDB):
         async with cls.pool.acquire() as connection:
             files = await connection.fetch(f'''
             SELECT
-                f.filename, f.filesize, f.fileurl, f.timecreated, f.timemodified, f.mimetype, f.bytes
+                f.id, f.filename, f.filesize, f.fileurl, f.timecreated, f.timemodified, f.mimetype, f.bytes
             FROM
                 courses_contents_modules_files f
             WHERE
                 f.courses_contents_modules_id = $1;
             ''', module_id)
 
-            return {str(_[2]): CourseContentModuleFile(
-                filename=_[0],
-                filesize=_[1],
-                fileurl=_[2],
-                timecreated=_[3],
-                timemodified=_[4],
-                mimetype=_[5],
-                bytes=_[6],
+            return {str(_[3]): CourseContentModuleFile(
+                id=_[0],
+                filename=_[1],
+                filesize=_[2],
+                fileurl=_[3],
+                timecreated=_[4],
+                timemodified=_[5],
+                mimetype=_[6],
+                bytes=_[7],
             ) for _ in files}
 
     @classmethod
@@ -186,7 +187,7 @@ class CourseContentDB(CourseDB):
         async with cls.pool.acquire() as connection:
             urls = await connection.fetch('''
             SELECT
-                u.name, u.url
+                u.id, u.name, u.url
             FROM
                 courses_contents_modules_urls u
             WHERE
@@ -194,8 +195,9 @@ class CourseContentDB(CourseDB):
             ''', module_id)
 
             return {str(_[1]): CourseContentModuleUrl(
-                name=_[0],
-                url=_[1],
+                id=_[0],
+                name=_[1],
+                url=_[2],
             ) for _ in urls}
 
     @classmethod
