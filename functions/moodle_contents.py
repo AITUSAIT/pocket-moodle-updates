@@ -30,6 +30,8 @@ async def update_course_contents(proxy_dict: dict | None):
     for _ in users:
         if not _.api_token:
             continue
+        if not await moodle.check():
+            continue
         print(f"{_.user_id=}")
         user: User = User(
             user_id=_.user_id,
