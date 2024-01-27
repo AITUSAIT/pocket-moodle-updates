@@ -24,16 +24,16 @@ class CourseContentDB(CourseDB):
 
     @classmethod
     async def insert_course_content(
-        cls, course_id: int, name: str, section: int
+        cls, course_id: int, name: str, section: int, content_id: int
     ) -> int:
         async with cls.pool.acquire() as connection:
             content_id = await connection.fetchval(
                 '''
-                INSERT INTO courses_contents (name, section, course_id)
-                VALUES ($1, $2, $3)
+                INSERT INTO courses_contents (content_id, name, section, course_id)
+                VALUES ($1, $2, $3, $4)
                 RETURNING id;
                 ''',
-                name, section, course_id
+                content_id, name, section, course_id
             )
             return content_id
 
