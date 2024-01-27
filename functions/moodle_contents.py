@@ -106,7 +106,7 @@ async def update_course_contents(proxy_dict: dict | None):
                                         content_file_bytes = await get_file(content_file_fileurl, moodle.user.api_token, proxy_dict)
                                     except:
                                         continue
-                                    Logger.info(f"{content_id=} {module_id} {content_file_filename} Downloaded\n")
+                                    Logger.info(f"{content_id=} {module_id} {content_file_filename} Downloaded")
                                     await CourseContentDB.insert_course_content_module_file(
                                         module_id=module_id,
                                         filename=content_file_filename,
@@ -128,7 +128,7 @@ async def update_course_contents(proxy_dict: dict | None):
                                         content_file_bytes = await get_file(content_file_fileurl, moodle.user.api_token, proxy_dict)
                                     except:
                                         continue
-                                    Logger.info(f"{content_id=} {module_id} {content_file_filename} Updated\n")
+                                    Logger.info(f"{content_id=} {module_id} {content_file_filename} Updated")
                                     await CourseContentDB.update_course_content_module_file(
                                         module_id=module_id,
                                         filename=content_file_filename,
@@ -146,7 +146,7 @@ async def update_course_contents(proxy_dict: dict | None):
                                 content_url_url = content_url["fileurl"]
                                 
                                 if not await CourseContentDB.if_course_content_module_url_exist(content_url_url):
-                                    Logger.info(f"{content_id=} {module_id} {content_url_name} Saved\n")
+                                    Logger.info(f"{content_id=} {module_id} {content_url_name} Saved")
                                     await CourseContentDB.insert_course_content_module_url(
                                         module_id=module_id,
                                         name=content_url_name,
@@ -159,7 +159,7 @@ async def update_course_contents(proxy_dict: dict | None):
                                     continue
                                 
                                 if url.name != content_url_name:
-                                    Logger.info(f"{content_id=} {module_id} {content_file_filename} Updated\n")
+                                    Logger.info(f"{content_id=} {module_id} {content_file_filename} Updated")
                                     await CourseContentDB.update_course_content_module_url(
                                         module_id=module_id,
                                         name=content_url_name,
