@@ -93,16 +93,16 @@ class CourseContentDB(CourseDB):
 
     @classmethod
     async def insert_course_content_module(
-        cls, content_id: int, url: str, name: str, modplural: str, modname: str
+        cls, module_id: int, content_id: int, url: str, name: str, modplural: str, modname: str
     ) -> int:
         async with cls.pool.acquire() as connection:
             module_id = await connection.fetchval(
                 '''
-                INSERT INTO courses_contents_modules (url, name, modplural, modname, courses_contents_id)
-                VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO courses_contents_modules (id, url, name, modplural, modname, courses_contents_id)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING id;
                 ''',
-                url, name, modplural, modname, content_id
+                module_id, url, name, modplural, modname, content_id
             )
             return module_id
 
