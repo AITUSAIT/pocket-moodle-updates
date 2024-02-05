@@ -30,6 +30,9 @@ class CourseContentDB(DB):
 
     @classmethod
     async def insert_course_content(cls, course_id: int, name: str, section: int, content_id: int) -> int:
+        if not await cls.if_course_content_exist(content_id):
+            return None
+
         async with cls.pool.acquire() as connection:
             content_id = await connection.fetchval(
                 """
@@ -102,6 +105,9 @@ class CourseContentDB(DB):
     async def insert_course_content_module(
         cls, module_id: int, content_id: int, url: str, name: str, modplural: str, modname: str
     ) -> int:
+        if not await cls.if_course_content_module_exist(module_id):
+            return None
+
         async with cls.pool.acquire() as connection:
             module_id = await connection.fetchval(
                 """

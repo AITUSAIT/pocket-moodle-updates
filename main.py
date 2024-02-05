@@ -9,7 +9,7 @@ from aiohttp import web
 
 from config import DB_DB, DB_HOST, DB_PASSWD, DB_PORT, DB_USER, IS_UPDATE_CONTENT, MAIN_HOST, token
 from functions.moodle import check_updates
-from functions.moodle_contents import update_course_contents
+from functions.moodle_contents import MoodleContents
 from modules.database import DB, ServerDB
 from modules.logger import Logger
 
@@ -88,7 +88,8 @@ async def main():
                 await asyncio.sleep(5)
     else:
         while 1:
-            await update_course_contents(next(proxies))
+            moodle_contents = MoodleContents(next(proxies))
+            await moodle_contents.update_course_contents()
             await asyncio.sleep(60 * 60)
 
 

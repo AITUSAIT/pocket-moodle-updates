@@ -1,4 +1,4 @@
-from modules.database import DB
+from modules.database.db import DB
 from modules.database.models import SettingBot
 
 
