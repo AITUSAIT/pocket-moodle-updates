@@ -1,85 +1,70 @@
-import logging
+import json
 import logging.config
-from typing import Mapping
+from functools import wraps
+from typing import Any, Callable, Mapping
+
+from aiogram import types
 
 
 class Logger(logging.Logger):
-    @classmethod
-    def load_config(cls):
-        config = {
-            "version": 1,
-            "disable_existing_loggers": False,
-            "formatters": {
-                "custom": {
-                    "format": "{asctime} - {levelname} - {message}",
-                    "style": "{",
-                    "datefmt": "%d/%m %H:%M:%S",
-                    "encoding": "UTF-8"
-                }
-            },
-            "handlers": {
-                "stdout": {
-                    "level": "INFO",
-                    "class": "logging.StreamHandler",
-                    "formatter": "custom"
-                },
-                "file": {
-                    "level": "INFO",
-                    "class": "logging.FileHandler",
-                    "filename": "logs.log",
-                    "formatter": "custom",
-                    # "mode": "a"
-                },
-                "file_debug": {
-                    "level": "DEBUG",
-                    "class": "logging.FileHandler",
-                    "filename": "logs_debug.log",
-                    "formatter": "custom",
-                    # "mode": "a"
-                }
-            },
-            "loggers": {
-                "custom_std": {
-                    "handlers": ["stdout"],
-                    "level": "INFO",
-                    "propagate": True
-                },
-                "file": {
-                    "handlers": ["file", "stdout"],
-                    "level": "INFO",
-                    "propagate": True
-                },
-                "file_debug": {
-                    "handlers": ["file_debug"],
-                    "level": "DEBUG",
-                    "propagate": True
-                }
-            }
-        }
-
-        logging.config.dictConfig(config)
-        cls.logger = logging.getLogger('file')
+    _config_loaded = False
+    _config = {}
 
     @classmethod
-    def error(cls, msg: object,
-              exc_info = None,
-              stack_info: bool = False,
-              stacklevel: int = 1,
-              extra: Mapping[str, object] | None = None):
-        cls.logger.error(msg=msg,
-                         exc_info=exc_info,
-                         stack_info=stack_info,
-                         stacklevel=stacklevel,
-                         extra=extra)
-        
+    def load_config(cls) -> None:
+        if not cls._config_loaded:
+            try:
+                with open("logger_config.json", "r", encoding="UTF-8") as config_file:
+                    cls._config = json.load(config_file)
+                    cls._config_loaded = True
+            except FileNotFoundError:
+                cls._config = {}
+            except json.JSONDecodeError:
+                print("Error: Invalid JSON format in config file")
+            logging.config.dictConfig(cls._config)
+            cls.logger = logging.getLogger("custom")
+
     @classmethod
-    def info(cls, msg: object,
-              exc_info = None,
-              stack_info: bool = False,
-              stacklevel: int = 1,
-              extra: Mapping[str, object] | None = None):
-        cls.logger.info(msg=msg,
-                         exc_info=exc_info,
-                         stack_info=stack_info,
-                         stacklevel=stacklevel,
-                         extra=extra)
+    def log_msg(cls, func) -> Callable[..., Any]:
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> Any:
+            arg = args[0]
+            if arg.__class__ is types.Message:
+                msg: types.Message = arg
+                if msg.chat.id == msg.from_user.id:
+                    cls.info(f"{msg.from_user.id} - {msg.text}")
+                else:
+                    cls.info(f"{msg.from_user.id} / {msg.chat.id} - {msg.text}")
+
+            elif arg.__class__ is types.CallbackQuery:
+                callback: types.CallbackQuery = arg
+                if callback.message.chat.id == callback.from_user.id:
+                    cls.info(f"{callback.from_user.id} - {callback.data}")
+                else:
+                    cls.info(f"{callback.from_user.id} / {callback.message.chat.id} - {callback.data}")
+
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    @classmethod
+    def error(  # pylint: disable=arguments-differ, arguments-renamed
+        cls,
+        msg: object,
+        exc_info=None,
+        stack_info: bool = False,
+        stacklevel: int = 1,
+        extra: Mapping[str, object] | None = None,
+    ) -> None:
+        cls.logger.error(msg=msg, exc_info=exc_info, stack_info=stack_info, stacklevel=stacklevel, extra=extra)
+
+    @classmethod
+    def info(  # pylint: disable=arguments-differ, arguments-renamed
+        cls,
+        msg: object,
+        exc_info=None,
+        stack_info: bool = False,
+        stacklevel: int = 1,
+        extra: Mapping[str, object] | None = None,
+    ) -> None:
+        cls.logger.info(msg=msg, exc_info=exc_info, stack_info=stack_info, stacklevel=stacklevel, extra=extra)

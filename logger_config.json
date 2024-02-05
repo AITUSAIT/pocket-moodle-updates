@@ -1,0 +1,49 @@
+{
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+        "custom": {
+            "format": "{asctime} - {levelname} - {message}",
+            "style": "{",
+            "datefmt": "%d/%m %H:%M:%S"
+        }
+    },
+    "handlers": {
+        "stdout": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "custom"
+        },
+        "file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": "logs.log",
+            "formatter": "custom",
+            "mode": "w"
+        },
+        "file_debug": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": "debug.log",
+            "formatter": "custom",
+            "mode": "w"
+        }
+    },
+    "loggers": {
+        "aiohttp.access": {
+            "handlers": ["file_debug"],
+            "level": "INFO",
+            "propagate": true
+        },
+        "custom": {
+            "handlers": ["stdout", "file"],
+            "level": "INFO",
+            "propagate": true
+        },
+        "aiogram.dispatcher.dispatcher": {
+            "handlers": ["stdout", "file", "file_debug"],
+            "level": "INFO",
+            "propagate": true
+        }
+    }
+}
