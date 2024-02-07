@@ -1,19 +1,18 @@
-from . import UserDB
-from .models import NotificationStatus, User
+from modules.database.db import DB
+from modules.database.models import NotificationStatus
 
 
-class NotificationDB(UserDB):
+class NotificationDB(DB):
     @classmethod
     async def get_notification_status(cls, user_id: int) -> NotificationStatus:
-        user: User = await cls.get_user(user_id)
-
         async with cls.pool.acquire() as connection:
-            _ = await connection.fetchrow('SELECT status, is_newbie_requested, is_update_requested, is_end_date, error_check_token FROM user_notification WHERE user_id = $1', user.user_id)
+            _ = await connection.fetchrow(
+                "SELECT status, is_newbie_requested, is_update_requested, is_end_date, error_check_token FROM user_notification WHERE user_id = $1",
+                user_id,
+            )
             return NotificationStatus(*_)
 
     @classmethod
     async def set_notification_status(cls, user_id: int, key: str, state: bool) -> None:
-        user: User = await cls.get_user(user_id)
-
         async with cls.pool.acquire() as connection:
-            await connection.execute(f'UPDATE user_notification SET {key} = $1 WHERE user_id = $2', state, user.user_id)
+            await connection.execute(f"UPDATE user_notification SET {key} = $1 WHERE user_id = $2", state, user_id)

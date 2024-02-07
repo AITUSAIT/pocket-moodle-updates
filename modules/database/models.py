@@ -5,10 +5,10 @@ from typing import TypedDict
 
 
 class UserJSONEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime):
-            return obj.isoformat()
-        return super().default(obj)
+    def default(self, o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+        return super().default(o)
 
 
 @dataclass
@@ -118,7 +118,7 @@ class CourseContent:
     id: int
     name: str
     section: int
-    modules: dict[str, 'CourseContentModule']
+    modules: dict[str, "CourseContentModule"]
 
 
 @dataclass
@@ -128,8 +128,8 @@ class CourseContentModule:
     name: str
     modplural: str
     modname: str
-    files: dict[str, 'CourseContentModuleFile']
-    urls: dict[str, 'CourseContentModuleUrl']
+    files: dict[str, "CourseContentModuleFile"]
+    urls: dict[str, "CourseContentModuleUrl"]
 
 
 @dataclass

@@ -8,12 +8,12 @@ from config import bot
 from modules.logger import Logger
 
 
-async def send(chat_id: int, text: str, register: bool=False):
+async def send(chat_id: int, text: str, register: bool = False):
     markup = types.InlineKeyboardMarkup()
     if not register:
-        markup.add(types.InlineKeyboardButton(text='Delete', callback_data="delete"))
+        markup.add(types.InlineKeyboardButton(text="Delete", callback_data="delete"))
     else:
-        markup.add(types.InlineKeyboardButton('Register account', callback_data=f'register'))
+        markup.add(types.InlineKeyboardButton("Register account", callback_data="register"))
 
     try:
         await bot.send_message(chat_id, text, reply_markup=markup, disable_notification=True)
@@ -31,4 +31,3 @@ async def send(chat_id: int, text: str, register: bool=False):
         return await send(chat_id, text)
     except Exception:
         Logger.error(f"{chat_id}\n{text}\n", exc_info=True)
-

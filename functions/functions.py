@@ -1,11 +1,11 @@
 import asyncio
-from datetime import datetime, timedelta
 import time
+from datetime import datetime, timedelta
 
 
-def clear_MD(text):
+def clear_md(text):
     text = str(text)
-    symbols = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
+    symbols = ["_", "*", "[", "]", "(", ")", "~", "`", ">", "#", "+", "-", "=", "|", "{", "}", ".", "!"]
 
     for sym in symbols:
         text = text.replace(sym, f"\{sym}")
@@ -14,18 +14,18 @@ def clear_MD(text):
 
 
 def replace_grade_name(name: str):
-    strings = ['Включая незаполненные оценки.', '(not to edit)', 'Include empty grades.']
+    strings = ["Включая незаполненные оценки.", "(not to edit)", "Include empty grades."]
     for string in strings:
-        name = name.replace(string, '')
+        name = name.replace(string, "")
     return name
 
 
 def get_diff_time(time_str):
-    due = datetime.strptime(time_str, '%A, %d %B %Y, %I:%M %p')
+    due = datetime.strptime(time_str, "%A, %d %B %Y, %I:%M %p")
     now = datetime.now()
-    diff = due-now
+    diff = due - now
     return chop_microseconds(diff)
-    
+
 
 def chop_microseconds(delta):
     return delta - timedelta(microseconds=delta.microseconds)
@@ -35,8 +35,7 @@ def timeit(func):
     async def process(func, *args, **params):
         if asyncio.iscoroutinefunction(func):
             return await func(*args, **params)
-        else:
-            return func(*args, **params)
+        return func(*args, **params)
 
     async def helper(*args, **params):
         start = time.time()
@@ -45,7 +44,7 @@ def timeit(func):
         # Test normal function route...
         # result = await process(lambda *a, **p: print(*a, **p), *args, **params)
 
-        print('>>>', func.__name__, time.time() - start, '\n')
+        print(">>>", func.__name__, time.time() - start, "\n")
         return result
 
     return helper
