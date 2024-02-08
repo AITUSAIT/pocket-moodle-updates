@@ -94,11 +94,22 @@ class SettingApp:
     notification_deadline: bool
 
 
+@dataclass(frozen=True)
+class Proxy:
+    login: str
+    password: str
+    ip: str
+    port: str | int
+
+    def __str__(self) -> str:
+        return f"http://{self.login}:{self.password}@{self.ip}:{self.port}"
+
+
 @dataclass
 class Server:
     token: str
     name: str
-    proxies: list
+    proxies: list[Proxy]
 
 
 class Transaction(TypedDict):

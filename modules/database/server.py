@@ -1,7 +1,7 @@
 import json
 
 from modules.database.db import DB
-from modules.database.models import Server
+from modules.database.models import Proxy, Server
 
 
 class ServerDB(DB):
@@ -12,9 +12,17 @@ class ServerDB(DB):
 
             return {
                 _["token"]: Server(
-                    _["token"],
-                    _["name"],
-                    json.loads(_["proxy_list"]),
+                    token=_["token"],
+                    name=_["name"],
+                    proxies=[
+                        Proxy(
+                            login=proxy["login"],
+                            password=proxy["passwd"],
+                            ip=proxy["ip"],
+                            port=proxy["http_port"],
+                        )
+                        for proxy in json.loads(_["proxy_list"])
+                    ],
                 )
                 for _ in servers
             }

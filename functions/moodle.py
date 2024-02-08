@@ -8,7 +8,7 @@ from modules.moodle import Moodle, User
 count_student = cycle([0, 1, 2])
 
 
-async def check_updates(user_id, proxy_dict: dict | None) -> int | str:
+async def check_updates(user_id) -> int | str:
     _ = await UserDB.get_user(user_id)
     user: User = User(
         user_id=_.user_id,
@@ -23,7 +23,7 @@ async def check_updates(user_id, proxy_dict: dict | None) -> int | str:
     settings = await SettingsBotDB.get_settings(user_id)
     notifications = await NotificationDB.get_notification_status(user.user_id)
 
-    moodle = Moodle(user, proxy_dict, notifications)
+    moodle = Moodle(user, notifications)
     if not await moodle.check():
         return -1
 
@@ -39,9 +39,9 @@ async def check_updates(user_id, proxy_dict: dict | None) -> int | str:
     await moodle.add_new_courses(courses, active_courses_ids)
     user.courses = await CourseDB.get_courses(user_id)
 
-    new_grades, updated_grades = await moodle.set_grades(courses_grades, course_ids)
+    await moodle.set_grades(courses_grades, course_ids)
     if not settings.status or not settings.notification_grade:
-        new_grades, updated_grades = [], []
+        moodle.new_grades, moodle.updated_grades = [], []
 
     if (
         moodle.user.is_active_sub()
@@ -49,15 +49,21 @@ async def check_updates(user_id, proxy_dict: dict | None) -> int | str:
         or notifications.is_update_requested
         or notifications.is_newbie_requested
     ):
-        updated_deadlines, new_deadlines, upcoming_deadlines = await moodle.set_assigns(courses_ass)
+        await moodle.set_assigns(courses_ass)
         if not settings.status or not settings.notification_deadline:
-            updated_deadlines, new_deadlines, upcoming_deadlines = [], [], []
+            moodle.updated_deadlines, moodle.new_deadlines, moodle.upcoming_deadlines = [], [], []
 
     await DeadlineDB.commit()
     await GradeDB.commit()
 
     if moodle.user.is_active_sub() and not notifications.is_newbie_requested:
-        for items in [new_grades, updated_grades, updated_deadlines, new_deadlines, upcoming_deadlines]:
+        for items in [
+            moodle.new_grades,
+            moodle.updated_grades,
+            moodle.updated_deadlines,
+            moodle.new_deadlines,
+            moodle.upcoming_deadlines,
+        ]:
             for item in items:
                 if len(item) > 20:
                     await send(moodle.user.user_id, item)

@@ -2,32 +2,23 @@ import asyncio
 import os
 import threading
 import traceback
-from itertools import cycle
 
 import aiohttp
 from aiohttp import web
 
-from config import DB_DB, DB_HOST, DB_PASSWD, DB_PORT, DB_USER, IS_UPDATE_CONTENT, MAIN_HOST, token
+from config import DB_DB, DB_HOST, DB_PASSWD, DB_PORT, DB_USER, IS_UPDATE_CONTENT, MAIN_HOST, SERVER_TOKEN
 from functions.moodle import check_updates
 from functions.moodle_contents import MoodleContents
-from modules.database import DB, ServerDB
+from modules.database import DB
 from modules.logger import Logger
+from modules.proxy_provider import ProxyProvider
 
 Logger.load_config()
 
 
-async def a_get_proxies(token: str):
-    servers = await ServerDB.get_servers()
-    server_data = servers.get(token)
-
-    if server_data:
-        return cycle(server_data.proxies)
-    return cycle([None])
-
-
-async def run_check(user, proxy_dict: dict | None) -> str:
+async def run_check(user) -> str:
     try:
-        result = await check_updates(user["user_id"], proxy_dict)
+        result = await check_updates(user["user_id"])
     except aiohttp.ClientConnectionError:
         res = "MOODLE CONNECTION FAILED"
     except asyncio.exceptions.TimeoutError:
@@ -46,49 +37,48 @@ async def main():
     dsn = f"postgresql://{DB_USER}:{DB_PASSWD}@{DB_HOST}:{DB_PORT}/{DB_DB}"
     await DB.connect(dsn)
 
-    proxies = await a_get_proxies(token)
+    params = {"token": SERVER_TOKEN}
     if not IS_UPDATE_CONTENT:
         while 1:
+            await ProxyProvider.update()
             timeout = aiohttp.ClientTimeout(total=15)
             user = {}
             try:
                 async with aiohttp.ClientSession(timeout=timeout) as session:
-                    async with session.get(f"{MAIN_HOST}/api/get_user?token={token}", ssl=False) as response:
+                    async with session.get(f"{MAIN_HOST}/api/get_user", params=params, ssl=False) as response:
                         if response.status == 200:
-                            proxy = next(proxies)
                             data = await response.json()
                             user = data["user"]
                             os.environ["ATT_STATE"] = "1"
-                            result = await run_check(user, proxy)
-                            params = {
+                            result = await run_check(user)
+                            data = {
                                 "user_id": user["user_id"],
                                 "result": result,
                             }
                             async with session.post(
-                                f"{MAIN_HOST}/api/update_user?token={token}", data=params, ssl=False
+                                f"{MAIN_HOST}/api/update_user", params=params, data=data, ssl=False
                             ) as response:
-                                Logger.info(
-                                    f"{user['user_id']} - {response.status} - {proxy.get('ip') if proxy else None}"
-                                )
+                                Logger.info(f"{user['user_id']} - {response.status}")
                         else:
                             await asyncio.sleep(5)
             except aiohttp.ClientConnectionError:
                 Logger.error("Failed to connect to Pocket Moodle Server")
                 await asyncio.sleep(10)
             except Exception as exc:
-                params = {
+                data = {
                     "user_id": user.get("user_id"),
                     "result": "Error",
                 }
                 async with aiohttp.ClientSession(timeout=timeout) as session:
                     async with session.post(
-                        f"{MAIN_HOST}/api/update_user?token={token}", data=params, ssl=False
+                        f"{MAIN_HOST}/api/update_user", params=params, data=data, ssl=False
                     ) as response:
                         Logger.error(f"{user.get('user_id', None)} {str(exc)}", exc_info=True)
                 await asyncio.sleep(5)
     else:
         while 1:
-            moodle_contents = MoodleContents(next(proxies))
+            await ProxyProvider.update()
+            moodle_contents = MoodleContents()
             await moodle_contents.update_course_contents()
             await asyncio.sleep(60 * 60)
 

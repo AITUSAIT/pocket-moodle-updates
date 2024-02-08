@@ -12,7 +12,7 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWD = os.getenv("DB_PASSWD")
 
 MAIN_HOST = os.getenv("MAIN_HOST")
-token = os.getenv("token")
+SERVER_TOKEN = os.getenv("token")
 
 TOKEN = os.getenv("TOKEN_bot")
 

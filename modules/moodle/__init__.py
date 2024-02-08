@@ -1,4 +1,5 @@
 import asyncio
+import traceback
 from copy import copy, deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -14,6 +15,7 @@ from modules.database import CourseDB, DeadlineDB, GradeDB, NotificationDB
 from modules.database.models import Course, Deadline, NotificationStatus
 from modules.database.models import User as UserModel
 from modules.moodle import exceptions
+from modules.proxy_provider import ProxyProvider
 
 
 @dataclass
@@ -24,11 +26,10 @@ class User(UserModel):
 
 
 class Moodle:
-    def __init__(self, user, proxy_dict: dict | None, notifications: NotificationStatus) -> None:
-        self.user: User = user
+    def __init__(self, user: User, notifications: NotificationStatus) -> None:
+        self.user = user
         self.host = "https://moodle.astanait.edu.kz/"
         self.user.msg = None
-        self.proxy_dict = proxy_dict
         self.notifications = notifications
 
         self.new_grades = ["New grades:"]
@@ -91,16 +92,8 @@ class Moodle:
             if params:
                 args.update(params)
         timeout_total = aiohttp.ClientTimeout(total=timeout)
-        proxy = (
-            f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}"
-            if IS_PROXY
-            else None
-        )
         async with aiohttp.ClientSession(host, timeout=timeout_total, headers=headers) as session:
-            if args:
-                r = await session.get(end_point, params=args, proxy=proxy)
-            else:
-                r = await session.get(end_point, proxy=proxy)
+            r = await session.get(end_point, params=args, proxy=str(ProxyProvider.get_proxy()) if IS_PROXY else None)
             return await r.json()
 
     async def get_users_by_field(self, value: str, field: str = "email") -> dict:
@@ -111,7 +104,7 @@ class Moodle:
     async def check_api_token(self):
         result: list | dict = await self.get_users_by_field(value=self.user.mail, field="email")
 
-        if isinstance(result, list):
+        if not isinstance(result, list):
             if result.get("errorcode") == "invalidtoken":
                 raise exceptions.WrongToken
             if result.get("errorcode") == "invalidparameter":
@@ -263,9 +256,7 @@ class Moodle:
                         percentage=percentage,
                     )
 
-        return [self.new_grades, self.updated_grades]
-
-    async def notify_new_deadline(self, course: Course, assign: dict[str, Any]):
+    def notify_new_deadline(self, course: Course, assign: dict[str, Any]):
         course_name = clear_md(course.name)
         url_to_course = f"/course/view.php?id={course.course_id}"
 
