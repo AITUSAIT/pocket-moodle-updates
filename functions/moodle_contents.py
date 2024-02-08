@@ -1,5 +1,4 @@
 from random import shuffle
-from typing import Any
 
 import aiohttp
 
@@ -7,6 +6,7 @@ from config import IS_PROXY
 from modules.database import CourseContentDB, CourseDB, NotificationDB, UserDB
 from modules.logger import Logger
 from modules.moodle import Moodle, User
+from modules.proxy_provider import ProxyProvider
 
 
 class FileDownloadError(Exception):
@@ -14,23 +14,19 @@ class FileDownloadError(Exception):
 
 
 class MoodleContents:
-    def __init__(self, proxy_dict: dict[str, Any]) -> None:
+    def __init__(self) -> None:
         self.moodle: Moodle
-        self.proxy_dict: dict[str, Any] = proxy_dict
 
     async def get_file(
         self,
         url: str,
         token: str,
     ) -> bytes:
-        proxy = (
-            f"http://{self.proxy_dict['login']}:{self.proxy_dict['passwd']}@{self.proxy_dict['ip']}:{self.proxy_dict['http_port']}"
-            if IS_PROXY
-            else None
-        )
         async with aiohttp.ClientSession() as session:
             params = {"token": token}
-            async with session.get(url, params=params, proxy=proxy) as response:
+            async with session.get(
+                url, params=params, proxy=ProxyProvider.get_proxy() if IS_PROXY else None
+            ) as response:
                 if response.status == 200 and response.headers.get("Content-Type:") != "application/json;":
                     return await response.read()
                 raise FileDownloadError(f"Failed to download file from {url}. Status code: {response.status}")
@@ -57,7 +53,7 @@ class MoodleContents:
                 msg=None,
             )
             notifications = await NotificationDB.get_notification_status(user.user_id)
-            self.moodle = Moodle(user, self.proxy_dict, notifications)
+            self.moodle = Moodle(user, notifications)
             if not await self.moodle.check():
                 continue
 
@@ -124,9 +120,7 @@ class MoodleContents:
 
         if not await CourseContentDB.if_course_content_module_file_exist(content_file_fileurl):
             try:
-                content_file_bytes = await self.get_file(
-                    content_file_fileurl, self.moodle.user.api_token, self.proxy_dict
-                )
+                content_file_bytes = await self.get_file(content_file_fileurl, self.moodle.user.api_token)
             except Exception:
                 return
 
@@ -149,7 +143,7 @@ class MoodleContents:
             return
 
         try:
-            content_file_bytes = await self.get_file(content_file_fileurl, self.moodle.user.api_token, self.proxy_dict)
+            content_file_bytes = await self.get_file(content_file_fileurl, self.moodle.user.api_token)
         except Exception:
             return
 
