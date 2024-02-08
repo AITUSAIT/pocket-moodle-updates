@@ -94,7 +94,7 @@ class SettingApp:
     notification_deadline: bool
 
 
-@dataclass
+@dataclass(frozen=True)
 class Proxy:
     login: str
     password: str
