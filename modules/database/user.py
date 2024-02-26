@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from async_lru import alru_cache
 
@@ -71,39 +71,3 @@ class UserDB(DB):
 
         for func in [cls.get_user]:
             func.cache_invalidate(user_id)  # pylint: disable=no-member
-
-    @classmethod
-    async def if_msg_end_date(cls, user_id: int) -> bool:
-        user: User = await cls.get_user(user_id)
-
-        async with cls.pool.acquire() as connection:
-            return await connection.fetchrow(
-                "SELECT is_end_date FROM user_notification WHERE user_id = $1", user.user_id
-            )
-
-    @classmethod
-    async def set_msg_end_date(cls, user_id: int, number: int) -> None:
-        user: User = await cls.get_user(user_id)
-
-        async with cls.pool.acquire() as connection:
-            await connection.execute(
-                "UPDATE user_notification SET is_end_date = $1 WHERE user_id = $2", number, user.user_id
-            )
-
-    @classmethod
-    async def activate_sub(cls, user_id: int, days: int) -> None:
-        user: User = await cls.get_user(user_id)
-
-        async with cls.pool.acquire() as connection:
-            if user:
-                sub_end_date = user.sub_end_date
-                new_sub_end_date = None
-                if sub_end_date is None or sub_end_date < datetime.now():
-                    new_sub_end_date = datetime.now() + timedelta(days=days)
-                else:
-                    new_sub_end_date = sub_end_date + timedelta(days=days)
-
-                await connection.execute(
-                    "UPDATE users SET sub_end_date = $1 WHERE user_id = $2", new_sub_end_date, user.user_id
-                )
-                cls.get_user.cache_invalidate(user_id)  # pylint: disable=no-member
