@@ -57,7 +57,10 @@ class MoodleContents:
             if not await self.moodle.check():
                 continue
 
-            courses = await self.moodle.get_courses()
+            try:
+                courses = await self.moodle.get_courses()
+            except TimeoutError:
+                continue
             active_courses_ids: tuple[int] = await self.moodle.get_active_courses_ids(courses)
 
             for course_id in [cid for cid in active_courses_ids if cid not in updated_courses_ids]:
