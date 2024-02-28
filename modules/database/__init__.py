@@ -5,7 +5,6 @@ from .db import DB
 from .deadline import DeadlineDB
 from .grade import GradeDB
 from .notification import NotificationDB
-from .payment import PaymentDB
 from .server import ServerDB
 from .settings_bot import SettingsBotDB
 from .user import UserDB
@@ -20,6 +19,5 @@ __all__ = [
     "NotificationDB",
     "SettingsBotDB",
     "ServerDB",
-    "PaymentDB",
     "models",
 ]
