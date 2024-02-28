@@ -40,15 +40,3 @@ jobs:
             commit_messages+=("$commit")
           done
           echo "::set-output name=commit_messages::${commit_messages[@]}"
-      -
-        name: Send Telegram Notify
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: |
-            ${{ github.actor }} created commits:
-
-            ${{ steps.extract_commits.outputs.commit_messages }}
-
-            Repository: ${{ github.repository }}
