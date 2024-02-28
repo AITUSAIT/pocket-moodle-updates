@@ -15,8 +15,8 @@ class User:
     user_id: int
     api_token: str
     register_date: datetime
-    sub_end_date: datetime | None
     mail: str
+    last_active: datetime | None
 
     def is_newbie(self) -> bool:
         register_date = self.register_date

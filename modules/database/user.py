@@ -49,7 +49,7 @@ class UserDB(DB):
     async def get_user(cls, user_id: int) -> User:
         async with cls.pool.acquire() as connection:
             user = await connection.fetchrow(
-                "SELECT user_id, api_token, register_date, sub_end_date, mail FROM users WHERE user_id = $1", user_id
+                "SELECT user_id, api_token, register_date, mail, last_active FROM users WHERE user_id = $1", user_id
             )
             return User(*user) if user else None
 
@@ -57,7 +57,7 @@ class UserDB(DB):
     @alru_cache(ttl=360)
     async def get_users(cls) -> list[User]:
         async with cls.pool.acquire() as connection:
-            users = await connection.fetch("SELECT user_id, api_token, register_date, sub_end_date, mail FROM users")
+            users = await connection.fetch("SELECT user_id, api_token, register_date, mail, last_active FROM users")
             return [User(*user) for user in users]
 
     @classmethod
