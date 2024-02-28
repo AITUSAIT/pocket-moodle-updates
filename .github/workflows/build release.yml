@@ -31,3 +31,13 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/pocket-moodle-updates
+      -
+        name: Send Telegram Notify
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            ${{ github.event.release.author.name }} released ${{ github.event.release.name }} of Pocket Moodle Updates:
+            
+            ${{ github.event.release.body }}
