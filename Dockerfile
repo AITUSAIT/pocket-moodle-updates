@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV TZ=Asia/Almaty
+ENV TZ=Asia/Aqtobe
 
 COPY requirements.txt .
 
