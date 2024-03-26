@@ -291,7 +291,7 @@ class Moodle:
         assign_id = str(assign["id"])
         cm_id = str(assign["cmid"])
         assign_name = assign["name"]
-        assign_due = (datetime.utcfromtimestamp(assign["duedate"]) + timedelta(hours=6)).strftime(
+        assign_due = (datetime.utcfromtimestamp(assign["duedate"]) + timedelta(hours=5)).strftime(
             "%A, %d %B %Y, %I:%M %p"
         )
         assignment_graded = bool(int(assign["grade"]))
