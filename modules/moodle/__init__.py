@@ -154,8 +154,8 @@ class Moodle:
         active_courses_ids = []
         for course in courses:
             now = datetime.now()
-            # start_date = datetime.utcfromtimestamp(course['startdate']) + timedelta(hours=6)
-            end_date = datetime.utcfromtimestamp(course["enddate"]) + timedelta(hours=6)
+            # start_date = datetime.utcfromtimestamp(course['startdate']) + timedelta(hours=5)
+            end_date = datetime.utcfromtimestamp(course["enddate"]) + timedelta(hours=5)
             if now < end_date:
                 # if now > start_date and now < end_date:
                 active_courses_ids.append(int(course["id"]))
@@ -262,7 +262,7 @@ class Moodle:
 
         cm_id = str(assign["cmid"])
         assign_name = assign["name"]
-        assign_due = (datetime.utcfromtimestamp(assign["duedate"]) + timedelta(hours=6)).strftime(
+        assign_due = (datetime.utcfromtimestamp(assign["duedate"]) + timedelta(hours=5)).strftime(
             "%A, %d %B %Y, %I:%M %p"
         )
 
@@ -291,7 +291,7 @@ class Moodle:
         assign_id = str(assign["id"])
         cm_id = str(assign["cmid"])
         assign_name = assign["name"]
-        assign_due = (datetime.utcfromtimestamp(assign["duedate"]) + timedelta(hours=6)).strftime(
+        assign_due = (datetime.utcfromtimestamp(assign["duedate"]) + timedelta(hours=5)).strftime(
             "%A, %d %B %Y, %I:%M %p"
         )
         assignment_graded = bool(int(assign["grade"]))
