@@ -1,4 +1,3 @@
-import asyncio
 from itertools import cycle
 
 from config import SERVER_TOKEN
@@ -17,4 +16,7 @@ class ProxyProvider:
     async def update(cls) -> None:
         servers = await ServerDB.get_servers()
         server = servers.get(SERVER_TOKEN)
-        cls.proxies = cycle(server.proxies)
+        if server:
+            cls.proxies = cycle(server.proxies)
+        else:
+            cls.proxies = cycle([None])

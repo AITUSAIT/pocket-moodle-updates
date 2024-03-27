@@ -1,5 +1,6 @@
 import asyncio
 from itertools import cycle
+from typing import Any
 
 from functions.bot import send
 from modules.database import CourseDB, DeadlineDB, GradeDB, NotificationDB, SettingsBotDB, UserDB
@@ -27,7 +28,7 @@ async def check_updates(user_id) -> int | str:
     if not await moodle.check():
         return -1
 
-    courses = await moodle.get_courses()
+    courses: list[dict[str, Any]] = await moodle.get_courses()
     active_courses_ids = await moodle.get_active_courses_ids(courses)
     course_ids = list(int(course["id"]) for course in courses)
 
@@ -43,20 +44,14 @@ async def check_updates(user_id) -> int | str:
     if not settings.status or not settings.notification_grade:
         moodle.new_grades, moodle.updated_grades = [], []
 
-    if (
-        moodle.user.is_active_sub()
-        or next(count_student) == 0
-        or notifications.is_update_requested
-        or notifications.is_newbie_requested
-    ):
-        await moodle.set_assigns(courses_ass)
-        if not settings.status or not settings.notification_deadline:
-            moodle.updated_deadlines, moodle.new_deadlines, moodle.upcoming_deadlines = [], [], []
+    await moodle.set_assigns(courses_ass)
+    if not settings.status or not settings.notification_deadline:
+        moodle.updated_deadlines, moodle.new_deadlines, moodle.upcoming_deadlines = [], [], []
 
     await DeadlineDB.commit()
     await GradeDB.commit()
 
-    if moodle.user.is_active_sub() and not notifications.is_newbie_requested:
+    if not notifications.is_newbie_requested:
         for items in [
             moodle.new_grades,
             moodle.updated_grades,

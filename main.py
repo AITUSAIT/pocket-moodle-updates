@@ -60,6 +60,7 @@ async def main():
                             ) as response:
                                 Logger.info(f"{user['user_id']} - {response.status}")
                         else:
+                            Logger.error(await response.json())
                             await asyncio.sleep(5)
             except aiohttp.ClientConnectionError:
                 Logger.error("Failed to connect to Pocket Moodle Server")

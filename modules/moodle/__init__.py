@@ -82,7 +82,7 @@ class Moodle:
         host="https://moodle.astanait.edu.kz",
         end_point="/webservice/rest/server.php/",
         timeout: int = 5,
-    ) -> dict:
+    ) -> dict | list | int | str:
         if not token:
             token = self.user.api_token
         if is_du:
@@ -150,7 +150,7 @@ class Moodle:
         }
         return await self.make_request(function=f, params=params)
 
-    async def get_active_courses_ids(self, courses) -> tuple[int]:
+    async def get_active_courses_ids(self, courses: dict[str, Any]) -> list[int]:
         active_courses_ids = []
         for course in courses:
             now = datetime.now()
@@ -161,9 +161,9 @@ class Moodle:
                 active_courses_ids.append(int(course["id"]))
         return active_courses_ids
 
-    async def add_new_courses(self, courses, active_courses_ids):
+    async def add_new_courses(self, courses: list[dict[str, Any]], active_courses_ids: list[int]):
         for course in courses:
-            course_id = course["id"]
+            course_id: str = course["id"]
             active = int(course_id) in active_courses_ids
 
             if str(course_id) not in self.user.courses:
