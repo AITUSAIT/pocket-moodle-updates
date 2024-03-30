@@ -105,10 +105,10 @@ class MoodleContents:
     async def update_files_and_urls(self, module, content):
         for content_file_or_url in module.get("contents", []):
             if content_file_or_url["type"] == "file":
-                self.update_file(content_id=content["id"], module_id=module["id"], content_file=content_file_or_url)
+                await self.update_file(content_id=content["id"], module_id=module["id"], content_file=content_file_or_url)
 
             elif content_file_or_url["type"] == "url":
-                self.update_url(content_id=content["id"], module_id=module["id"], content_url=content_file_or_url)
+                await self.update_url(content_id=content["id"], module_id=module["id"], content_url=content_file_or_url)
 
     async def update_file(self, content_id, module_id, content_file):
         if "mimetype" not in content_file:
