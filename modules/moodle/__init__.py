@@ -1,14 +1,13 @@
 import asyncio
-import traceback
-from copy import copy, deepcopy
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, MutableMapping
+from typing import Any
 
 import aiohttp
 from bs4 import BeautifulSoup
 
-from config import IS_PROXY
+from config import IS_PROXY, TZ
 from functions.bot import send
 from functions.functions import clear_md, get_diff_time, replace_grade_name
 from modules.database import CourseDB, DeadlineDB, GradeDB, NotificationDB
@@ -154,8 +153,8 @@ class Moodle:
         active_courses_ids = []
         for course in courses:
             now = datetime.now()
-            # start_date = datetime.utcfromtimestamp(course['startdate']) + timedelta(hours=5)
-            end_date = datetime.utcfromtimestamp(course["enddate"]) + timedelta(hours=5)
+            # start_date = datetime.utcfromtimestamp(course['startdate'])
+            end_date = datetime.fromtimestamp(course["enddate"])
             if now < end_date:
                 # if now > start_date and now < end_date:
                 active_courses_ids.append(int(course["id"]))
@@ -262,9 +261,7 @@ class Moodle:
 
         cm_id = str(assign["cmid"])
         assign_name = assign["name"]
-        assign_due = (datetime.utcfromtimestamp(assign["duedate"]) + timedelta(hours=5)).strftime(
-            "%A, %d %B %Y, %I:%M %p"
-        )
+        assign_due = datetime.fromtimestamp(assign["duedate"]).strftime("%A, %d %B %Y, %I:%M %p")
 
         assign_url = f"https://moodle.astanait.edu.kz/mod/assign/view.php?id={cm_id}"
 
@@ -291,9 +288,7 @@ class Moodle:
         assign_id = str(assign["id"])
         cm_id = str(assign["cmid"])
         assign_name = assign["name"]
-        assign_due = (datetime.utcfromtimestamp(assign["duedate"]) + timedelta(hours=5)).strftime(
-            "%A, %d %B %Y, %I:%M %p"
-        )
+        assign_due = datetime.fromtimestamp(assign["duedate"], tz=TZ).strftime("%A, %d %B %Y, %I:%M %p")
         assignment_graded = bool(int(assign["grade"]))
 
         submitted = submitted_dict[assign_id]
@@ -310,7 +305,7 @@ class Moodle:
                 deadline_id=int(cm_id),
                 assign_id=int(assign_id),
                 name=assign_name,
-                due=datetime.strptime(assign_due, "%A, %d %B %Y, %I:%M %p"),
+                due=datetime.fromtimestamp(assign["duedate"]),
                 graded=assignment_graded,
                 submitted=submitted,
                 status={"status03": 0, "status1": 0, "status2": 0, "status3": 0},
@@ -318,30 +313,11 @@ class Moodle:
             return
 
         deadline: Deadline = course.deadlines[cm_id]
-        deadline.assign_id = assign_id
         diff_time = get_diff_time(assign_due)
         deadline.graded = assignment_graded
-        deadline.submitted = submitted
         old_status = deepcopy(deadline.status)
 
         if not submitted:
-            if assign_due != deadline.due.strftime("%A, %d %B %Y, %I:%M %p"):
-                if not self.course_state2_assigns:
-                    self.course_state2_assigns = 1
-                    self.updated_deadlines[
-                        self.index_updated_assigns
-                    ] += f"\n\n  [{course_name}]({clear_md(url_to_course)}):"
-
-                self.updated_deadlines[
-                    self.index_updated_assigns
-                ] += f"\n      [{clear_md(deadline.name)}]({clear_md(assign_url)})"
-                self.updated_deadlines[self.index_updated_assigns] += f"\n      {clear_md(assign_due)}"
-                self.updated_deadlines[self.index_updated_assigns] += f"\n      Remaining: {clear_md(diff_time)}\n"
-
-                if len(self.updated_deadlines[self.index_updated_assigns]) > 3000:
-                    self.index_updated_assigns += 1
-                    self.updated_deadlines.append("")
-
             reminders_filter = [
                 ["status03", timedelta(hours=3)],
                 ["status1", timedelta(days=1)],
@@ -376,17 +352,34 @@ class Moodle:
                     break
 
         if (
-            assign_due == deadline.due.strftime("%A, %d %B %Y, %I:%M %p")
+            assign["duedate"] == deadline.due.timestamp()
             and old_status == deadline.status
             and deadline.submitted == submitted
         ):
             return
 
+        if not submitted and assign_due != deadline.due.strftime("%A, %d %B %Y, %I:%M %p"):
+            if not self.course_state2_assigns:
+                self.course_state2_assigns = 1
+                self.updated_deadlines[
+                    self.index_updated_assigns
+                ] += f"\n\n  [{course_name}]({clear_md(url_to_course)}):"
+
+            self.updated_deadlines[
+                self.index_updated_assigns
+            ] += f"\n      [{clear_md(deadline.name)}]({clear_md(assign_url)})"
+            self.updated_deadlines[self.index_updated_assigns] += f"\n      {clear_md(assign_due)}"
+            self.updated_deadlines[self.index_updated_assigns] += f"\n      Remaining: {clear_md(diff_time)}\n"
+
+            if len(self.updated_deadlines[self.index_updated_assigns]) > 3000:
+                self.index_updated_assigns += 1
+                self.updated_deadlines.append("")
+
         DeadlineDB.update_deadline(
             user_id=self.user.user_id,
             deadline_id=int(cm_id),
             name=assign_name,
-            due=datetime.strptime(assign_due, "%A, %d %B %Y, %I:%M %p"),
+            due=datetime.fromtimestamp(assign["duedate"]).strptime(assign_due, "%A, %d %B %Y, %I:%M %p"),
             graded=assignment_graded,
             submitted=submitted,
             status=deadline.status,

@@ -2,6 +2,7 @@ import os
 
 import dotenv
 from aiogram import Bot, types
+from pytz import timezone
 
 dotenv.load_dotenv()
 
@@ -19,6 +20,8 @@ TOKEN = os.getenv("TOKEN_bot")
 IS_PROXY = bool(int(os.getenv("IS_PROXY")))
 IS_UPDATE_CONTENT = bool(int(os.getenv("IS_UPDATE_CONTENT")))
 
+TZ_RAW = os.getenv("TZ", "Asia/Aqtobe")
+TZ = timezone(TZ_RAW) if TZ_RAW else timezone
 
 bot = Bot(token=TOKEN, parse_mode=types.ParseMode.MARKDOWN_V2)
 
