@@ -14,7 +14,7 @@ class DeadlineDB(DB):
             deadlines = await connection.fetch(
                 """
             SELECT
-                d.id, d.assign_id, d.name, d.due, dp.graded, dp.submitted, dp.status
+                d.id, d.assign_id, d.name, dp.due, dp.graded, dp.submitted, dp.status
             FROM
                 deadlines d
             INNER JOIN
@@ -48,25 +48,27 @@ class DeadlineDB(DB):
     ):
         query = """
         INSERT INTO
-            deadlines (id, assign_id, name, due, course_id)
-        VALUES ($1, $2, $3, $4, $5)
+            deadlines (id, assign_id, name, course_id)
+        VALUES ($1, $2, $3, $4)
         ON CONFLICT
             (id)
         DO NOTHING;
         """
-        cls.add_query(query, deadline_id, assign_id, name, due, course_id)
+        cls.add_query(query, deadline_id, assign_id, name, course_id)
         cls.set_deadline_user_pair(
-            user_id=user_id, deadline_id=deadline_id, submitted=submitted, graded=graded, status=status
+            user_id=user_id, deadline_id=deadline_id, due=due, submitted=submitted, graded=graded, status=status
         )
 
     @classmethod
-    def set_deadline_user_pair(cls, user_id: int, deadline_id: int, submitted: bool, graded: bool, status: dict):
+    def set_deadline_user_pair(
+        cls, user_id: int, deadline_id: int, due: datetime, submitted: bool, graded: bool, status: dict
+    ):
         query = """
         INSERT INTO
-            deadlines_user_pair (user_id, id, submitted, graded, status)
-        VALUES ($1, $2, $3, $4, $5)
+            deadlines_user_pair (user_id, id, submitted, graded, status, due)
+        VALUES ($1, $2, $3, $4, $5, $6)
         """
-        cls.add_query(query, user_id, deadline_id, submitted, graded, json.dumps(status))
+        cls.add_query(query, user_id, deadline_id, submitted, graded, json.dumps(status), due)
 
     @classmethod
     def update_deadline(
@@ -76,20 +78,20 @@ class DeadlineDB(DB):
         UPDATE
             deadlines
         SET
-            name = $1, due = $2
+            name = $1
         WHERE
-            id = $3;
+            id = $2;
         """
-        cls.add_query(query, name, due, deadline_id)
+        cls.add_query(query, name, deadline_id)
         query = """
         UPDATE
             deadlines_user_pair
         SET
-            submitted = $1, graded = $2, status = $3
+            submitted = $1, graded = $2, status = $3, due = $4
         WHERE
-            id = $4 and user_id = $5;
+            id = $5 and user_id = $6;
         """
-        cls.add_query(query, submitted, graded, json.dumps(status), deadline_id, user_id)
+        cls.add_query(query, submitted, graded, json.dumps(status), due, deadline_id, user_id)
 
     @classmethod
     def add_query(cls, query, *params):
