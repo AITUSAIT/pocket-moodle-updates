@@ -13,65 +13,46 @@ permissions:
   contents: read
 
 jobs:
-  pylint:
+  setup-and-check:
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        tool: [pylint, mypy, black, isort]
+    outputs:
+      cache-key: ${{ steps.cache-deps.outputs.cache-key }}
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.10
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: 3.10.13
           cache: 'pip'
 
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pylint
-
-      - name: Run pylint
-        run: |
-          pylint **/*.py
-
-  black:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v5
+      - name: Cache dependencies
+        id: cache-deps
+        uses: actions/cache@v3
         with:
-          python-version: 3.10.13
-          cache: 'pip'
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install black
+          pip install pylint mypy black isort
 
-      - name: Run black
+      - name: Run Tool
         run: |
-          black --diff --check .
-
-  isort:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.10.13
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install isort
-
-      - name: Run isort
-        run: |
-          isort --diff --check-only .
+          if [ "${{ matrix.tool }}" = "pylint" ]; then
+            pylint $(git ls-files '*.py')
+          elif [ "${{ matrix.tool }}" = "mypy" ]; then
+            mypy .
+          elif [ "${{ matrix.tool }}" = "black" ]; then
+            black --diff --check .
+          elif [ "${{ matrix.tool }}" = "isort" ]; then
+            isort --diff --check-only .
+          fi
