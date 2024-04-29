@@ -61,4 +61,4 @@ jobs:
           message: |
             ${{ github.actor }} building Pocket Moodle Updates ${{ github.event.inputs.docker_tag }}:
 
-            ${{ github.repositoryUrl }}
+            https://github.com/${{github.repository}}/commit/${{github.sha}}/checks/${{github.run_id}}
