@@ -11,9 +11,7 @@ on:
         default: 'test'
         options:
           - test
-          - dev-arsen
-          - dev-arnur
-          - dev-max
+          - dev
 
 jobs:
   build:
