@@ -20,24 +20,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
-      - name: Set up Docker Buildx
+      - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build and push
-        uses: docker/build-push-action@v4
+      - name: Cache Docker layers
+        uses: actions/cache@v2
         with:
-          context: .
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          file: ./Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/pocket-moodle-updates:${{ github.event.inputs.docker_tag || github.event_name == 'release' && 'latest' }}
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build Docker image
+        run: docker build --tag pocket-moodle-updates:${{ github.event.inputs.docker_tag || github.event_name == 'release' && 'latest' }} .
+
+      - name: Save Docker layers cache
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
 
       - name: Checkout server_side_configs
         uses: actions/checkout@v3
@@ -49,15 +50,8 @@ jobs:
       - name: Copy .env
         run: cp /home/aitusa/server_side_configs/.env ./
 
-      - name: Deploy PROD
-        if: github.event_name == 'release'
-        run: sudo docker-compose -f docker-compose.yml pull && sudo docker-compose -f docker-compose.yml up -d
-      - name: Deploy TEST
-        if: github.event.inputs.docker_tag == 'test'
-        run: sudo docker-compose -f docker-compose.yml pull test-pocket-moodle-updates && sudo docker-compose -f docker-compose.yml up -d
-      - name: Deploy DEV
-        if: github.event.inputs.docker_tag == 'DEV'
-        run: sudo docker-compose -f docker-compose.yml pull dev-pocket-moodle-updates && sudo docker-compose -f docker-compose.yml up -d
+      - name: Restart containers
+        run: sudo docker-compose -f docker-compose.yml rm -fs && sudo docker-compose -f docker-compose.yml up -d
 
       - name: Send Telegram Notify To Pocket Moodle Chat
         if: github.event_name == 'release'
