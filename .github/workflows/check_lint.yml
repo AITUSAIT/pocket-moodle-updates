@@ -13,44 +13,23 @@ permissions:
   contents: read
 
 jobs:
-  setup-and-check:
+  code-checks:
     runs-on: self-hosted
-    strategy:
-      matrix:
-        tool: [pylint, black, isort]
-    outputs:
-      cache-key: ${{ steps.cache-deps.outputs.cache-key }}
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.10.13
-          cache: 'pip'
-
-      - name: Cache dependencies
-        id: cache-deps
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+      - uses: actions/checkout@v3
 
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pylint mypy black isort
+          pip install pylint black isort
 
-      - name: Run Tool
-        run: |
-          if [ "${{ matrix.tool }}" = "pylint" ]; then
-            pylint $(git ls-files '*.py')
-          elif [ "${{ matrix.tool }}" = "black" ]; then
-            black --diff --check .
-          elif [ "${{ matrix.tool }}" = "isort" ]; then
-            isort --diff --check-only .
-          fi
+      - name: Run isort
+        run: isort --diff --check-only .
+      
+      - name: Run black
+        run: black --diff --check .
+
+      - name: Run pylint
+        run: pylint --recursive=y .

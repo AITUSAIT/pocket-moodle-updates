@@ -39,6 +39,26 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/pocket-moodle-updates:${{ github.event.inputs.docker_tag || github.event_name == 'release' && 'latest' }}
 
+      - name: Checkout server_side_configs
+        uses: actions/checkout@v3
+        with:
+          repository: AITUSAIT/server_side_configs
+          ref: main
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Copy .env
+        run: cp /home/aitusa/server_side_configs/.env ./
+
+      - name: Deploy PROD
+        if: github.event_name == 'release'
+        run: sudo docker-compose -f docker-compose.yml pull && sudo docker-compose -f docker-compose.yml up -d
+      - name: Deploy TEST
+        if: github.event.inputs.docker_tag == 'test'
+        run: sudo docker-compose -f docker-compose.yml pull test-pocket-moodle-updates && sudo docker-compose -f docker-compose.yml up -d
+      - name: Deploy DEV
+        if: github.event.inputs.docker_tag == 'DEV'
+        run: sudo docker-compose -f docker-compose.yml pull dev-pocket-moodle-updates && sudo docker-compose -f docker-compose.yml up -d
+
       - name: Send Telegram Notify To Pocket Moodle Chat
         if: github.event_name == 'release'
         uses: appleboy/telegram-action@master
@@ -57,6 +77,6 @@ jobs:
           to: ${{ secrets.TELEGRAM_TO_IT }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: |
-            ${{ github.actor }} builded Pocket Moodle Updates ${{ github.event.inputs.docker_tag }}:
+            ${{ github.actor }} builded and deployed Pocket Moodle Updates ${{ github.event.inputs.docker_tag }}:
 
             https://github.com/${{github.repository}}/commit/${{github.sha}}/checks/${{github.run_id}}
