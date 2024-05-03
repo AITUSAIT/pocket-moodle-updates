@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   setup-and-check:
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     strategy:
       matrix:
         tool: [pylint, black, isort]
