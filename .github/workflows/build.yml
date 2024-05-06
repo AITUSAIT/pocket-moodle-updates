@@ -51,7 +51,7 @@ jobs:
         run: cp /home/aitusa/server_side_configs/.env ./
 
       - name: Restart containers
-        run: sudo docker-compose -f docker-compose.yml rm -fs && sudo docker-compose -f docker-compose.yml up -d
+        run: docker-compose -f docker-compose.yml rm -fs && docker-compose -f docker-compose.yml up -d
 
       - name: Send Telegram Notify To Pocket Moodle Chat
         if: github.event_name == 'release'
