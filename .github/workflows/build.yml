@@ -43,11 +43,9 @@ jobs:
       - name: CD to server side configs
         run: |
           cd /home/aitusa/server_side_configs/
-          set -a
-          source .env
-
-      - name: Restart containers
-        run: docker-compose -f docker-compose.yml rm -fs && docker-compose -f docker-compose.yml up -d
+          git pull
+          docker-compose -f docker-compose.yml --env-file .env rm -fs
+          docker-compose -f docker-compose.yml --env-file .env up -d
 
       - name: Send Telegram Notify To Pocket Moodle Chat
         if: github.event_name == 'release'
