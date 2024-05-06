@@ -40,15 +40,11 @@ jobs:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
 
-      - name: Checkout server_side_configs
-        uses: actions/checkout@v3
-        with:
-          repository: AITUSAIT/server_side_configs
-          ref: main
-          token: ${{ secrets.PAT_TOKEN }}
-
-      - name: Copy .env
-        run: cp /home/aitusa/server_side_configs/.env ./
+      - name: CD to server side configs
+        run: |
+          cd /home/aitusa/server_side_configs/
+          set -a
+          source .env
 
       - name: Restart containers
         run: docker-compose -f docker-compose.yml rm -fs && docker-compose -f docker-compose.yml up -d
