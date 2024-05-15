@@ -17,6 +17,7 @@ Logger.load_config()
 
 
 async def run_check(user) -> str:
+    res = ""
     try:
         result = await check_updates(user["user_id"])
     except aiohttp.ClientConnectionError:
@@ -24,6 +25,9 @@ async def run_check(user) -> str:
     except asyncio.exceptions.TimeoutError:
         traceback.print_exc()
         res = "TIMEOUT MOODLE"
+    except Exception:
+        traceback.print_exc()
+        res = "unexpected error"
     else:
         if result == 1:
             res = "Success"
