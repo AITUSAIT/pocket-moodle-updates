@@ -19,20 +19,22 @@
             "class": "logging.FileHandler",
             "filename": "logs.log",
             "formatter": "custom",
-            "mode": "w"
+            "mode": "w",
+            "maxBytes": 10485760
         },
         "file_debug": {
-            "level": "INFO",
+            "level": "DEBUG",
             "class": "logging.FileHandler",
             "filename": "debug.log",
             "formatter": "custom",
-            "mode": "w"
+            "mode": "w",
+            "maxBytes": 10485760
         }
     },
     "loggers": {
         "aiohttp.access": {
             "handlers": ["file_debug"],
-            "level": "INFO",
+            "level": "DEBUG",
             "propagate": true
         },
         "custom": {
