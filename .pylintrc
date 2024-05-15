@@ -1,4 +1,5 @@
 [MASTER]
+ignore=venv
 
 [MESSAGES CONTROL]
 disable=
