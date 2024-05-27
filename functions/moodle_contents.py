@@ -2,11 +2,9 @@ from random import shuffle
 
 import aiohttp
 
-from config import IS_PROXY
 from modules.database import CourseContentDB, CourseDB, NotificationDB, UserDB
 from modules.logger import Logger
 from modules.moodle import Moodle, User
-from modules.proxy_provider import ProxyProvider
 
 
 class FileDownloadError(Exception):
@@ -24,9 +22,7 @@ class MoodleContents:
     ) -> bytes:
         async with aiohttp.ClientSession() as session:
             params = {"token": token}
-            async with session.get(
-                url, params=params, proxy=ProxyProvider.get_proxy() if IS_PROXY else None
-            ) as response:
+            async with session.get(url, params=params) as response:
                 if response.status == 200 and response.headers.get("Content-Type:") != "application/json;":
                     return await response.read()
                 raise FileDownloadError(f"Failed to download file from {url}. Status code: {response.status}")

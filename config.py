@@ -1,7 +1,8 @@
 import os
 
 import dotenv
-from aiogram import Bot, types
+from aiogram import Bot
+from aiogram.enums.parse_mode import ParseMode
 from pytz import timezone
 
 dotenv.load_dotenv()
@@ -17,26 +18,9 @@ SERVER_TOKEN = os.getenv("token")
 
 TOKEN = os.getenv("TOKEN_bot")
 
-IS_PROXY = bool(int(os.getenv("IS_PROXY")))
 IS_UPDATE_CONTENT = bool(int(os.getenv("IS_UPDATE_CONTENT")))
 
 TZ_RAW = os.getenv("TZ", "Asia/Aqtobe")
 TZ = timezone(TZ_RAW) if TZ_RAW else timezone
 
-bot = Bot(token=TOKEN, parse_mode=types.ParseMode.MARKDOWN_V2)
-
-
-chrome_options = [
-    "--headless",
-    "--disable-gpu",
-    "--no-sandbox",
-    "--disable-dev-shm-usage",
-    "--disable-crash-reporter",
-    "--log-level=3",
-    "--disable-extensions",
-    "--disable-in-process-stack-traces",
-    "--disable-logging",
-    "--output=/dev/null",
-    "--disable-features=Translate",
-    "--force-device-scale-factor=1",
-]
+bot = Bot(token=TOKEN, parse_mode=ParseMode.MARKDOWN_V2)

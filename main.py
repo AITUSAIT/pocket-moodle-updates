@@ -11,7 +11,6 @@ from functions.moodle import check_updates
 from functions.moodle_contents import MoodleContents
 from modules.database import DB
 from modules.logger import Logger
-from modules.proxy_provider import ProxyProvider
 
 Logger.load_config()
 
@@ -44,7 +43,6 @@ async def main():
     params = {"token": SERVER_TOKEN}
     if not IS_UPDATE_CONTENT:
         while 1:
-            await ProxyProvider.update()
             timeout = aiohttp.ClientTimeout(total=15)
             user = {}
             try:
@@ -82,7 +80,6 @@ async def main():
                 await asyncio.sleep(5)
     else:
         while 1:
-            await ProxyProvider.update()
             moodle_contents = MoodleContents()
             await moodle_contents.update_course_contents()
             await asyncio.sleep(60 * 60)
