@@ -32,9 +32,7 @@ jobs:
             ${{ runner.os }}-buildx-
 
       - name: Build and Push Docker image
-        run: |
-          docker build --tag pocket-moodle-updates:${{ github.event.inputs.docker_tag || github.event_name == 'release' && 'latest' }} .
-          docker push pocket-moodle-updates:${{ github.event.inputs.docker_tag || github.event_name == 'release' && 'latest' }} dakexduck/pocket-moodle-updates:${{ github.event.inputs.docker_tag || github.event_name == 'release' && 'latest' }}
+        run: docker build --tag pocket-moodle-updates:${{ github.event.inputs.docker_tag || github.event_name == 'release' && 'latest' }} .
       
       - name: Save Docker layers cache
         uses: actions/cache@v2
@@ -46,8 +44,7 @@ jobs:
         run: |
           cd /home/aitusa/server_side_configs/
           git pull
-          docker-compose -f docker-compose.yml --env-file .env rm -fs
-          docker-compose -f docker-compose.yml --env-file .env up -d
+          ./reload_pm.sh
 
       - name: Send Telegram Notify To Pocket Moodle Chat
         if: github.event_name == 'release'
