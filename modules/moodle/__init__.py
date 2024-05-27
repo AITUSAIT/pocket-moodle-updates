@@ -194,8 +194,6 @@ class Moodle:
         for course_grades in [
             _ for _ in courses_grades if "tables" in _ and int(_["tables"][0]["courseid"]) in course_ids
         ]:
-            self.course_state1_grades = 0
-            self.course_state2_grades = 0
             course_grades = course_grades["tables"][0]
             course = self.user.courses[str(course_grades["courseid"])]
             url_to_course = f"{moodle}/grade/report/user/index.php?id={course.course_id}"
