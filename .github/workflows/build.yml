@@ -40,7 +40,7 @@ jobs:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
 
-      - name: CD to server side configs
+      - name: Deploy
         run: |
           cd /home/aitusa/server_side_configs/
           git pull
