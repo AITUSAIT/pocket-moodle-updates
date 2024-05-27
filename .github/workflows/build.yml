@@ -31,16 +31,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
-      - name: Build Docker image
-        run: docker build --tag pocket-moodle-updates:${{ github.event.inputs.docker_tag || github.event_name == 'release' && 'latest' }} .
-
+      - name: Build and Push Docker image
+        run: |
+          docker build --tag pocket-moodle-updates:${{ github.event.inputs.docker_tag || github.event_name == 'release' && 'latest' }} .
+          docker push pocket-moodle-updates:${{ github.event.inputs.docker_tag || github.event_name == 'release' && 'latest' }} dakexduck/pocket-moodle-updates:${{ github.event.inputs.docker_tag || github.event_name == 'release' && 'latest' }}
+      
       - name: Save Docker layers cache
         uses: actions/cache@v2
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
 
-      - name: CD to server side configs
+      - name: Deploy
         run: |
           cd /home/aitusa/server_side_configs/
           git pull
