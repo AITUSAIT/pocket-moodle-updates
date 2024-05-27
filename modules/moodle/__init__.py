@@ -327,7 +327,7 @@ class Moodle:
 
             for i, reminder_filter in enumerate(reminders_filters):
                 key, td = reminder_filter
-                if deadline.status.get(key, 0) or diff_time < td:
+                if deadline.status.get(key, 0) or diff_time > td:
                     continue
 
                 if not self.course_state3_assigns:
@@ -346,8 +346,8 @@ class Moodle:
                     self.index_upcoming_assigns += 1
                     self.upcoming_deadlines.append("")
 
-                for reminder_filter in range(i, 4):
-                    key, td = reminders_filters[reminder_filter]
+                for j in range(i, 4):
+                    key, td = reminders_filters[j]
                     deadline.status[key] = 1
                     break
 
