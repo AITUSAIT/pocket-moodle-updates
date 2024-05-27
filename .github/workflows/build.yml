@@ -32,9 +32,7 @@ jobs:
             ${{ runner.os }}-buildx-
 
       - name: Build and Push Docker image
-        run: |
-          docker build --tag dakexduck/pocket-moodle-updates:${{ github.event.inputs.docker_tag || github.event_name == 'release' && 'latest' }} .
-          docker push dakexduck/pocket-moodle-updates:${{ github.event.inputs.docker_tag || github.event_name == 'release' && 'latest' }}
+        run: docker build --tag pocket-moodle-updates:${{ github.event.inputs.docker_tag || github.event_name == 'release' && 'latest' }} .
       
       - name: Save Docker layers cache
         uses: actions/cache@v2
