@@ -44,8 +44,7 @@ jobs:
         run: |
           cd /home/aitusa/server_side_configs/
           git pull
-          docker-compose -f docker-compose.yml --env-file .env rm -fs
-          docker-compose -f docker-compose.yml --env-file .env up -d
+          ./reload_pm.sh
 
       - name: Send Telegram Notify To Pocket Moodle Chat
         if: github.event_name == 'release'
