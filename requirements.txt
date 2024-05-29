@@ -5,3 +5,4 @@ async-lru==2.0.4
 beautifulsoup4==4.12.3
 python-dotenv==1.0.1
 pytz==2024.1
+lxml==5.2.2
