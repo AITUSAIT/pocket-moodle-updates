@@ -1,32 +1,30 @@
 import asyncio
 
 from aiogram import types
-from aiogram.utils import exceptions
-from aiohttp import client_exceptions
+from aiogram.exceptions import TelegramNetworkError, TelegramNotFound, TelegramRetryAfter
+from aiohttp.client_exceptions import ClientConnectionError
 
 from config import bot
 from modules.logger import Logger
 
 
 async def send(chat_id: int, text: str, register: bool = False):
-    markup = types.InlineKeyboardMarkup()
+    buttons = [[]]
     if not register:
-        markup.add(types.InlineKeyboardButton(text="Delete", callback_data="delete"))
+        buttons[0].append(types.InlineKeyboardButton(text="Delete", callback_data="delete"))
     else:
-        markup.add(types.InlineKeyboardButton("Register account", callback_data="register"))
+        buttons[0].append(types.InlineKeyboardButton(text="Register account", callback_data="register"))
+
+    markup = types.InlineKeyboardMarkup(inline_keyboard=[[]])
 
     try:
-        await bot.send_message(chat_id, text, reply_markup=markup, disable_notification=True)
-    except exceptions.BotBlocked:
+        await bot.send_message(chat_id=chat_id, text=text, reply_markup=markup, disable_notification=True)
+    except TelegramNotFound:
         ...
-    except exceptions.ChatNotFound:
-        ...
-    except exceptions.RetryAfter as e:
-        await asyncio.sleep(e.timeout)
+    except TelegramRetryAfter as e:
+        await asyncio.sleep(e.retry_after)
         return await send(chat_id, text)
-    except exceptions.UserDeactivated:
-        ...
-    except client_exceptions.ClientConnectionError:
+    except (TelegramNetworkError, ClientConnectionError):
         await asyncio.sleep(5)
         return await send(chat_id, text)
     except Exception:

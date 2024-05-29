@@ -7,14 +7,14 @@ from typing import Any
 import aiohttp
 from bs4 import BeautifulSoup
 
-from config import IS_PROXY, TZ
+from config import TZ
 from functions.bot import send
 from functions.functions import clear_md, get_diff_time, replace_grade_name
 from modules.database import CourseDB, DeadlineDB, GradeDB, NotificationDB
 from modules.database.models import Course, Deadline, NotificationStatus
 from modules.database.models import User as UserModel
-from modules.moodle import exceptions
-from modules.proxy_provider import ProxyProvider
+
+from . import exceptions
 
 
 @dataclass
@@ -92,7 +92,7 @@ class Moodle:
                 args.update(params)
         timeout_total = aiohttp.ClientTimeout(total=timeout)
         async with aiohttp.ClientSession(host, timeout=timeout_total, headers=headers) as session:
-            r = await session.get(end_point, params=args, proxy=str(ProxyProvider.get_proxy()) if IS_PROXY else None)
+            r = await session.get(end_point, params=args)
             return await r.json()
 
     async def get_users_by_field(self, value: str, field: str = "email") -> dict:
