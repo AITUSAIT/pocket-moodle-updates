@@ -327,7 +327,7 @@ class Moodle:
 
             for i, reminder_filter in enumerate(reminders_filters):
                 key, td = reminder_filter
-                if deadline.status.get(key, 0) or diff_time > td:
+                if deadline.status.get(key, 0) or diff_time > td or diff_time < timedelta(days=0):
                     continue
 
                 if not self.course_state3_assigns:
@@ -349,7 +349,6 @@ class Moodle:
                 for j in range(i, 4):
                     key, td = reminders_filters[j]
                     deadline.status[key] = 1
-                    break
 
         if (
             assign["duedate"] == deadline.due.timestamp()
