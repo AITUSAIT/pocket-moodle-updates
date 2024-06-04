@@ -318,16 +318,16 @@ class Moodle:
         old_status = deepcopy(deadline.status)
 
         if not submitted:
-            reminders_filter = [
-                ["status03", timedelta(hours=3)],
-                ["status1", timedelta(days=1)],
-                ["status2", timedelta(days=2)],
-                ["status3", timedelta(days=3)],
+            reminders_filters = [
+                ("status03", timedelta(hours=3)),
+                ("status1", timedelta(days=1)),
+                ("status2", timedelta(days=2)),
+                ("status3", timedelta(days=3)),
             ]
 
-            for i, _ in enumerate(reminders_filter):
-                key, td = reminders_filter[i]
-                if deadline.status.get(key, 0) or diff_time > timedelta(hours=1) or diff_time < td:
+            for i, reminder_filter in enumerate(reminders_filters):
+                key, td = reminder_filter
+                if deadline.status.get(key, 0) or diff_time > td or diff_time < timedelta(days=0):
                     continue
 
                 if not self.course_state3_assigns:
@@ -346,10 +346,9 @@ class Moodle:
                     self.index_upcoming_assigns += 1
                     self.upcoming_deadlines.append("")
 
-                for _ in range(i, 4):
-                    key, td = reminders_filter[_]
+                for j in range(i, 4):
+                    key, td = reminders_filters[j]
                     deadline.status[key] = 1
-                    break
 
         if (
             assign["duedate"] == deadline.due.timestamp()
