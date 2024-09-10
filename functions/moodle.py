@@ -1,6 +1,6 @@
 import asyncio
 from itertools import cycle
-from typing import Any
+from typing import Any, Literal
 
 from functions.bot import send
 from modules.database import CourseDB, DeadlineDB, GradeDB, NotificationDB, SettingsBotDB, UserDB
@@ -9,7 +9,7 @@ from modules.moodle import Moodle, User
 count_student = cycle([0, 1, 2])
 
 
-async def check_updates(user_id) -> int | str:
+async def check_updates(user_id) -> Literal["Failed to check Token and Email"] | Literal["Success"]:
     _ = await UserDB.get_user(user_id)
     user: User = User(
         user_id=_.user_id,
@@ -26,7 +26,7 @@ async def check_updates(user_id) -> int | str:
 
     moodle = Moodle(user, notifications)
     if not await moodle.check():
-        return -1
+        return "Failed to check Token and Email"
 
     courses: list[dict[str, Any]] = await moodle.get_courses()
     active_courses_ids = await moodle.get_active_courses_ids(courses)
@@ -72,4 +72,4 @@ async def check_updates(user_id) -> int | str:
 
     del user
     del moodle
-    return 1
+    return "Success"
