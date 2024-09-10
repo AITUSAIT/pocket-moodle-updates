@@ -20,7 +20,7 @@ def replace_grade_name(name: str):
     return name
 
 
-def get_diff_time(time_str):
+def get_diff_time(time_str: str):
     due = datetime.strptime(time_str, "%A, %d %B %Y, %I:%M %p")
     now = datetime.now()
     diff = due - now

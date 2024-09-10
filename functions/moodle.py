@@ -1,12 +1,10 @@
 import asyncio
-from itertools import cycle
-from typing import Any, Literal
+from typing import Literal
 
 from functions.bot import send
 from modules.database import CourseDB, DeadlineDB, GradeDB, NotificationDB, SettingsBotDB, UserDB
 from modules.moodle import Moodle, User
-
-count_student = cycle([0, 1, 2])
+from modules.moodle.models import MoodleCourse, MoodleCourseWithAssigns, MoodleGradesTable
 
 
 async def check_updates(user_id) -> Literal["Failed to check Token and Email"] | Literal["Success"]:
@@ -28,23 +26,24 @@ async def check_updates(user_id) -> Literal["Failed to check Token and Email"] |
     if not await moodle.check():
         return "Failed to check Token and Email"
 
-    courses: list[dict[str, Any]] = await moodle.get_courses()
+    courses: list[MoodleCourse] = await moodle.get_courses()
     active_courses_ids = await moodle.get_active_courses_ids(courses)
-    course_ids = list(int(course["id"]) for course in courses)
-
-    courses_ass = (await moodle.get_assignments())["courses"]
+    course_ids = list(int(course.id) for course in courses)
     if not (notifications.is_update_requested or notifications.is_newbie_requested):
         course_ids = active_courses_ids
-    courses_grades = await asyncio.gather(*[moodle.get_grades(course_id) for course_id in course_ids])
 
     await moodle.add_new_courses(courses, active_courses_ids)
     user.courses = await CourseDB.get_courses(user_id)
 
-    await moodle.set_grades(courses_grades, course_ids)
+    courses_grades_table: list[MoodleGradesTable] = await asyncio.gather(
+        *[moodle.get_grades(course_id) for course_id in course_ids]
+    )
+    await moodle.set_grades(courses_grades_table, course_ids)
     if not settings.status or not settings.notification_grade:
         moodle.new_grades, moodle.updated_grades = [], []
 
-    await moodle.set_assigns(courses_ass)
+    courses_assigns: list[MoodleCourseWithAssigns] = await moodle.get_assignments()
+    await moodle.set_assigns(courses_assigns)
     if not settings.status or not settings.notification_deadline:
         moodle.updated_deadlines, moodle.new_deadlines, moodle.upcoming_deadlines = [], [], []
 
