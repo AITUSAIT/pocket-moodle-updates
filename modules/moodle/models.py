@@ -20,17 +20,17 @@ class MoodleCourse:
     completionhascriteria: bool
     completionusertracked: bool
     category: int
-    progress: float
-    completed: bool
     startdate: int
     enddate: int
     marker: int
-    lastaccess: int
     isfavourite: bool
     hidden: bool
     overviewfiles: List[str]
     showactivitydates: bool
     showcompletionconditions: Optional[bool]
+    progress: Optional[float]
+    completed: Optional[bool]
+    lastaccess: Optional[int]
 
 
 @dataclass
