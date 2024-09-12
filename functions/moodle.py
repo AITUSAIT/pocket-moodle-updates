@@ -28,7 +28,7 @@ async def check_updates(user_id) -> Literal["Failed to check Token and Email"] |
 
     courses: list[MoodleCourse] = await moodle.get_courses()
     active_courses_ids = await moodle.get_active_courses_ids(courses)
-    course_ids = list(int(course.id) for course in courses)
+    course_ids = [int(course.id) for course in courses]
     if not (notifications.is_update_requested or notifications.is_newbie_requested):
         course_ids = active_courses_ids
 
