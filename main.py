@@ -32,19 +32,19 @@ async def process_user_update(session, user, params):
 
     update_data = {
         "user_id": user["user_id"],
-        "result": result,
+        "log": result,
     }
 
-    async with session.post(f"{MAIN_HOST}/api/update_user", params=params, data=update_data, ssl=False) as response:
-        Logger.info(f"User {user['user_id']} - Update status: {response.status}")
+    async with session.post(f"{MAIN_HOST}/api/queue/log", params=params, data=update_data, ssl=False) as response:
+        Logger.info(f"{user['user_id']} - {result} - {response.status}")
 
 
 async def fetch_and_update_user(session, params):
     """Fetch user data from the server and update their Moodle status."""
-    async with session.get(f"{MAIN_HOST}/api/get_user", params=params, ssl=False) as response:
+    async with session.get(f"{MAIN_HOST}/api/queue/user", params=params, ssl=False) as response:
         if response.status == 200:
             data = await response.json()
-            return data["user"]
+            return data
 
         Logger.error(await response.json())
         return None
