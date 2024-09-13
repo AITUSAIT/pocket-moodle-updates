@@ -1,9 +1,9 @@
-from dataclasses import dataclass, field
 from typing import List, Optional
 
+from pydantic import BaseModel, Field
 
-@dataclass
-class MoodleCourse:
+
+class MoodleCourse(BaseModel):
     id: int
     shortname: str
     fullname: str
@@ -33,8 +33,7 @@ class MoodleCourse:
     lastaccess: Optional[int]
 
 
-@dataclass
-class Assignment:
+class Assignment(BaseModel):
     id: int
     cmid: int
     course: int
@@ -65,34 +64,20 @@ class Assignment:
     preventsubmissionnotingroup: int
     intro: str
     introformat: int
-    configs: List[dict] = field(default_factory=list)
-    introfiles: List[dict] = field(default_factory=list)
-    introattachments: List[dict] = field(default_factory=list)
+    configs: List[dict] = Field(default_factory=list)
+    introfiles: List[dict] = Field(default_factory=list)
+    introattachments: List[dict] = Field(default_factory=list)
 
 
-@dataclass
-class MoodleCourseWithAssigns:
+class MoodleCourseWithAssigns(BaseModel):
     id: int
     fullname: str
     shortname: str
     timemodified: int
-    assignments: List[Assignment] = field(default_factory=list)
+    assignments: List[Assignment] = Field(default_factory=list)
 
 
-@dataclass
-class TableDataItem:
-    itemname: "TableDataItemDetail"
-    leader: Optional["TableDataItemDetail"]
-    weight: Optional["TableDataItemDetail"]
-    grade: Optional["TableDataItemDetail"]
-    range: Optional["TableDataItemDetail"]
-    percentage: Optional["TableDataItemDetail"]
-    feedback: Optional["TableDataItemDetail"]
-    contributiontocoursetotal: Optional["TableDataItemDetail"]
-
-
-@dataclass
-class TableDataItemDetail:
+class TableDataItemDetail(BaseModel):
     content: Optional[str] = None
     colspan: Optional[int] = None
     rowspan: Optional[int] = None
@@ -101,10 +86,20 @@ class TableDataItemDetail:
     headers: Optional[str] = None
 
 
-@dataclass
-class MoodleGradesTable:
+class TableDataItem(BaseModel):
+    itemname: TableDataItemDetail
+    leader: Optional[TableDataItemDetail] = None
+    weight: Optional[TableDataItemDetail] = None
+    grade: Optional[TableDataItemDetail] = None
+    range: Optional[TableDataItemDetail] = None
+    percentage: Optional[TableDataItemDetail] = None
+    feedback: Optional[TableDataItemDetail] = None
+    contributiontocoursetotal: Optional[TableDataItemDetail] = None
+
+
+class MoodleGradesTable(BaseModel):
     courseid: int
     userid: int
     userfullname: str
     maxdepth: int
-    tabledata: List[TableDataItem]
+    tabledata: List[TableDataItem | list]

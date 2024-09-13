@@ -1,5 +1,4 @@
 import asyncio
-import json
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -7,9 +6,7 @@ from typing import Any
 
 import aiohttp
 from bs4 import BeautifulSoup
-from dacite import from_dict
 
-from config import TZ
 from functions.bot import send
 from functions.functions import clear_md, get_diff_time, replace_grade_name
 from modules.database import CourseDB, DeadlineDB, GradeDB, NotificationDB
@@ -126,17 +123,17 @@ class Moodle:
         result: list[dict[str, Any]] = await self.__make_request(
             "core_enrol_get_users_courses", params={"userid": self.user.id}, timeout=10
         )
-        return [from_dict(MoodleCourse, course) for course in result]
+        return [MoodleCourse.model_validate(course) for course in result]
 
     async def get_grades(self, courseid: int):
         result = await self.__make_request(
             "gradereport_user_get_grades_table", params={"userid": self.user.id, "courseid": courseid}
         )
-        return from_dict(MoodleGradesTable, result["tables"][0])
+        return MoodleGradesTable.model_validate(result["tables"][0])
 
     async def get_assignments(self) -> list[MoodleCourseWithAssigns]:
         result = await self.__make_request("mod_assign_get_assignments", timeout=10)
-        return [from_dict(MoodleCourseWithAssigns, course) for course in result["courses"]]
+        return [MoodleCourseWithAssigns.model_validate(course) for course in result["courses"]]
 
     async def is_assignment_submitted(self, assign_id: str) -> tuple[bool, str]:
         data = await self.__make_request("mod_assign_get_submission_status", params={"assignid": assign_id})
@@ -182,6 +179,8 @@ class Moodle:
 
     async def process_grades(self, grades_table: MoodleGradesTable, course: Course, url_to_course: str):
         for grade in grades_table.tabledata:
+            if isinstance(grade, list):
+                continue
             if not grade.percentage:
                 continue
             if not grade.percentage.content:
@@ -209,10 +208,14 @@ class Moodle:
     async def add_new_grade(self, course: Course, grade_id: str, name: str, percentage: str, url_to_course: str):
         if "%" in percentage:
             if not self.course_state_new_grades:
+                if len(self.new_grades[self.index_new_grades]) > 2000:
+                    self.index_new_grades += 1
+                    self.new_grades.append("")
+
                 self.course_state_new_grades = 1
                 self.new_grades[self.index_new_grades] += f"\n\n  [{clear_md(course.name)}]({clear_md(url_to_course)}):"
 
-            self.append_grade(self.new_grades, name, clear_md(percentage))
+            self.append_new_grade(name, clear_md(percentage))
             await GradeDB.set_grade(
                 user_id=self.user.user_id,
                 course_id=course.course_id,
@@ -225,21 +228,25 @@ class Moodle:
         old_grade = course.grades[grade_id].percentage
         if percentage != "Error" and not (percentage == "-" and old_grade == "Error"):
             if not self.course_state_updated_grades:
+                if len(self.updated_grades[self.index_updated_grades]) > 2000:
+                    self.index_updated_grades += 1
+                    self.updated_grades.append("")
+
                 self.course_state_updated_grades = 1
                 self.updated_grades[
                     self.index_updated_grades
                 ] += f"\n\n  [{clear_md(course.name)}]({clear_md(url_to_course)}):"
 
-            self.append_grade(self.updated_grades, name, f"{clear_md(old_grade)} \-\> *{clear_md(percentage)}*")
+            self.append_updated_grade(name, f"{clear_md(old_grade)} \-\> *{clear_md(percentage)}*")
             await GradeDB.update_grade(
                 user_id=self.user.user_id, course_id=course.course_id, grade_id=int(grade_id), percentage=percentage
             )
 
-    def append_grade(self, grade_list: list[str], name: str, percentage: str):
-        grade_list[self.index_new_grades] += f"\n      {clear_md(name)}\: {percentage}"
-        if len(grade_list[self.index_new_grades]) > 3000:
-            self.index_new_grades += 1
-            grade_list.append("")
+    def append_updated_grade(self, name: str, percentage: str):
+        self.updated_grades[self.index_updated_grades] += f"\n      {clear_md(name)}\: {percentage}"
+
+    def append_new_grade(self, name: str, percentage: str):
+        self.new_grades[self.index_new_grades] += f"\n      {clear_md(name)}\: {percentage}"
 
     def notify_new_deadline(self, course: Course, assign: Assignment):
         course_name, assign_name, assign_due, assign_url = self.get_assign_details(course, assign)
@@ -259,16 +266,17 @@ class Moodle:
         self, course_name: str, assign_name: str, assign_due: str, assign_url: str, diff_time: timedelta
     ):
         if not self.course_state_new_assigns:
+            if len(self.new_deadlines[self.index_new_assigns]) > 2000:
+                self.index_new_assigns += 1
+                self.new_deadlines.append("")
             self.course_state_new_assigns = 1
             self.new_deadlines[self.index_new_assigns] += f"\n\n  [{clear_md(course_name)}]({clear_md(assign_url)}):"
 
-        self.new_deadlines[self.index_new_assigns] += f"\n      [{clear_md(assign_name)}]({clear_md(assign_url)})"
-        self.new_deadlines[self.index_new_assigns] += f"\n      {clear_md(assign_due)}"
-        self.new_deadlines[self.index_new_assigns] += f"\n      Remaining: {clear_md(diff_time)}\n"
-
-        if len(self.new_deadlines[self.index_new_assigns]) > 3000:
-            self.index_new_assigns += 1
-            self.new_deadlines.append("")
+        self.new_deadlines[self.index_new_assigns] += (
+            f"\n      [{clear_md(assign_name)}]({clear_md(assign_url)})"
+            f"\n      {clear_md(assign_due)}"
+            f"\n      Remaining: {clear_md(diff_time)}\n"
+        )
 
     async def set_update_remind_assign(self, assign: Assignment, course: Course, submitted_dict: dict[str, bool]):
         assignment_graded = bool(int(assign.grade))
@@ -299,20 +307,19 @@ class Moodle:
         self, course_name: str, assign_name: str, assign_due: str, assign_url: str, diff_time: timedelta
     ):
         if not self.course_state_updated_assigns:
+            if len(self.updated_deadlines[self.index_updated_assigns]) > 2000:
+                self.index_updated_assigns += 1
+                self.updated_deadlines.append("")
             self.course_state_updated_assigns = 1
             self.updated_deadlines[
                 self.index_updated_assigns
             ] += f"\n\n  [{clear_md(course_name)}]({clear_md(assign_url)}):"
 
-        self.updated_deadlines[
-            self.index_updated_assigns
-        ] += f"\n      [{clear_md(assign_name)}]({clear_md(assign_url)})"
-        self.updated_deadlines[self.index_updated_assigns] += f"\n      {clear_md(assign_due)}"
-        self.updated_deadlines[self.index_updated_assigns] += f"\n      Remaining: {clear_md(diff_time)}\n"
-
-        if len(self.updated_deadlines[self.index_updated_assigns]) > 3000:
-            self.index_updated_assigns += 1
-            self.updated_deadlines.append("")
+        self.updated_deadlines[self.index_updated_assigns] += (
+            f"\n      [{clear_md(assign_name)}]({clear_md(assign_url)})"
+            f"\n      {clear_md(assign_due)}"
+            f"\n      Remaining: {clear_md(diff_time)}\n"
+        )
 
     async def update_existing_deadline(
         self, course: Course, assign: Assignment, submitted: bool, assignment_graded: bool
@@ -408,10 +415,10 @@ class Moodle:
         self.upcoming_deadlines[self.index_upcoming_assigns] += (
             f"\n      {clear_md(assign_name)}"
             f"\n      {clear_md(assign_due)}"
-            f"\n      Remaining: {clear_md(diff_time)}\n"
+            f"\n      Remaining: {clear_md(diff_time)}"
             "\n"
         )
 
-        if len(self.upcoming_deadlines[self.index_upcoming_assigns]) > 3000:
+        if len(self.upcoming_deadlines[self.index_upcoming_assigns]) > 2000:
             self.index_upcoming_assigns += 1
             self.upcoming_deadlines.append("")
