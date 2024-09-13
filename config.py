@@ -7,12 +7,6 @@ from pytz import timezone
 
 dotenv.load_dotenv()
 
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_DB = os.getenv("DB_DB")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWD = os.getenv("DB_PASSWD")
-
 MAIN_HOST = os.getenv("MAIN_HOST")
 SERVER_TOKEN = os.getenv("token")
 
