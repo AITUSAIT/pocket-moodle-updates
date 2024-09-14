@@ -1,20 +1,20 @@
-import os
-
 import dotenv
 from aiogram import Bot
 from aiogram.enums.parse_mode import ParseMode
 from pytz import timezone
 
+from modules.utils.config import get_from_env
+
 dotenv.load_dotenv()
 
-MAIN_HOST = os.getenv("MAIN_HOST")
-SERVER_TOKEN = os.getenv("token")
+PM_HOST = str(get_from_env("PM_HOST"))
+PM_TOKEN = str(get_from_env("PM_TOKEN"))
 
-TOKEN = os.getenv("TOKEN_bot")
+TOKEN = str(get_from_env("TG_TOKEN"))
 
-IS_UPDATE_CONTENT = bool(int(os.getenv("IS_UPDATE_CONTENT")))
+IS_UPDATE_CONTENT = bool(int(get_from_env("IS_UPDATE_CONTENT")))
 
-TZ_RAW = os.getenv("TZ", "Asia/Aqtobe")
+TZ_RAW = str(get_from_env("TZ", "Asia/Aqtobe"))
 TZ = timezone(TZ_RAW) if TZ_RAW else timezone
 
 bot = Bot(token=TOKEN, parse_mode=ParseMode.MARKDOWN_V2)

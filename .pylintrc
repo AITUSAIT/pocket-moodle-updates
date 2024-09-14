@@ -16,7 +16,8 @@ disable=
     chained-comparison,
     too-many-branches,
     line-too-long,
-    too-many-function-args
+    too-many-function-args,
+    too-few-public-methods
 
 [FORMAT]
 max-line-length=121
