@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import sys
 import traceback
 
 import aiohttp
@@ -7,6 +8,14 @@ import aiohttp
 from functions.moodle import check_updates
 from modules.pm_api.api import PocketMoodleAPI
 from modules.pm_api.models import User
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%d/%b/%Y %H:%M:%S",
+    stream=sys.stdout
+)
 
 
 async def run_update_check(user: User) -> str:

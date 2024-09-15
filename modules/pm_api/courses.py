@@ -21,6 +21,15 @@ class CoursesAPI(BaseAPI):
 
         return courses
 
+    async def get_course(self, user_id: int, course_id: int) -> Course:
+        params = {
+            "user_id": user_id,
+        }
+        response = await self.get(f"/api/courses/{course_id}", params=params)
+
+        json_response = await response.json()
+        return Course.model_validate(json_response)
+
     async def is_ready_courses(self, user_id: int) -> bool:
         response: ClientResponse = await self.get(f"/api/courses/is_ready_courses/{user_id}")
         json_response = await response.json()
