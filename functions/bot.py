@@ -1,15 +1,15 @@
 import asyncio
+import logging
 
 from aiogram import types
 from aiogram.exceptions import TelegramNetworkError, TelegramNotFound, TelegramRetryAfter
 from aiohttp.client_exceptions import ClientConnectionError
 
 from config import bot
-from modules.logger import Logger
 
 
 async def send(chat_id: int, text: str, register: bool = False):
-    buttons = [[]]
+    buttons: list[list[types.InlineKeyboardButton]] = [[]]
     if not register:
         buttons[0].append(types.InlineKeyboardButton(text="Delete", callback_data="delete"))
     else:
@@ -28,4 +28,4 @@ async def send(chat_id: int, text: str, register: bool = False):
         await asyncio.sleep(5)
         return await send(chat_id, text)
     except Exception:
-        Logger.error(f"{chat_id}\n{text}\n", exc_info=True)
+        logging.error(f"{chat_id}\n{text}\n", exc_info=True)

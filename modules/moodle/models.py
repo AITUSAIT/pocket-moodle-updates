@@ -1,9 +1,31 @@
-from typing import List, Optional
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
 
-class MoodleCourse(BaseModel):
+class UserJSONEncoder:
+    # pylint: disable=no-member
+    def default(self, obj: Any) -> Any:
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)  # type: ignore
+
+    # pylint: enable=no-member
+
+
+class PydanticBaseModel(BaseModel):
+    class Config:
+        json_encoders = {datetime: lambda v: v.isoformat()}
+
+    def to_json(self) -> str:
+        return self.model_dump_json()
+
+    def to_dict(self) -> Dict[str, Any]:
+        return self.model_dump()
+
+
+class MoodleCourse(PydanticBaseModel):
     id: int
     shortname: str
     fullname: str
@@ -33,7 +55,7 @@ class MoodleCourse(BaseModel):
     lastaccess: Optional[int]
 
 
-class Assignment(BaseModel):
+class MoodleAssignment(PydanticBaseModel):
     id: int
     cmid: int
     course: int
@@ -69,15 +91,15 @@ class Assignment(BaseModel):
     introattachments: List[dict] = Field(default_factory=list)
 
 
-class MoodleCourseWithAssigns(BaseModel):
+class MoodleCourseWithAssigns(PydanticBaseModel):
     id: int
     fullname: str
     shortname: str
     timemodified: int
-    assignments: List[Assignment] = Field(default_factory=list)
+    assignments: List[MoodleAssignment] = Field(default_factory=list)
 
 
-class TableDataItemDetail(BaseModel):
+class MoodleTableDataItemDetail(PydanticBaseModel):
     content: Optional[str] = None
     colspan: Optional[int] = None
     rowspan: Optional[int] = None
@@ -86,20 +108,84 @@ class TableDataItemDetail(BaseModel):
     headers: Optional[str] = None
 
 
-class TableDataItem(BaseModel):
-    itemname: TableDataItemDetail
-    leader: Optional[TableDataItemDetail] = None
-    weight: Optional[TableDataItemDetail] = None
-    grade: Optional[TableDataItemDetail] = None
-    range: Optional[TableDataItemDetail] = None
-    percentage: Optional[TableDataItemDetail] = None
-    feedback: Optional[TableDataItemDetail] = None
-    contributiontocoursetotal: Optional[TableDataItemDetail] = None
+class MoodleTableDataItem(PydanticBaseModel):
+    itemname: MoodleTableDataItemDetail
+    leader: Optional[MoodleTableDataItemDetail] = None
+    weight: Optional[MoodleTableDataItemDetail] = None
+    grade: Optional[MoodleTableDataItemDetail] = None
+    range: Optional[MoodleTableDataItemDetail] = None
+    percentage: Optional[MoodleTableDataItemDetail] = None
+    feedback: Optional[MoodleTableDataItemDetail] = None
+    contributiontocoursetotal: Optional[MoodleTableDataItemDetail] = None
 
 
-class MoodleGradesTable(BaseModel):
+class MoodleGradesTable(PydanticBaseModel):
     courseid: int
     userid: int
     userfullname: str
     maxdepth: int
-    tabledata: List[TableDataItem | list]
+    tabledata: List[MoodleTableDataItem | list]
+
+
+class MoodleCompletionData(PydanticBaseModel):
+    state: int
+    timecompleted: int
+    valueused: bool
+    hascompletion: bool
+    isautomatic: bool
+    istrackeduser: bool
+    uservisible: bool
+    details: List
+    overrideby: Optional[int]
+
+
+class MoodleDateInfo(PydanticBaseModel):
+    label: str
+    timestamp: int
+
+
+class MoodleModuleItem(PydanticBaseModel):
+    filename: str
+    fileurl: str
+    timecreated: int
+    timemodified: int
+    type: str
+    mimetype: Optional[str]
+    filesize: Optional[int]
+
+
+class MoodleModule(PydanticBaseModel):
+    id: int
+    name: str
+    instance: int
+    contextid: int
+    visible: int
+    uservisible: bool
+    visibleoncoursepage: int
+    modicon: str
+    modname: str
+    modplural: str
+    indent: int
+    onclick: str
+    customdata: str
+    noviewlink: bool
+    completion: int
+    completiondata: MoodleCompletionData
+    dates: List[MoodleDateInfo] = []
+    contents: list[MoodleModuleItem] = []
+    url: Optional[str] = None
+    afterlink: Optional[str] = None
+    availabilityinfo: Optional[dict | str] = None
+    contentsinfo: Optional[dict] = None
+
+
+class MoodleContent(PydanticBaseModel):
+    id: int
+    name: str
+    visible: int
+    summary: str
+    summaryformat: int
+    section: int
+    hiddenbynumsections: int
+    uservisible: bool
+    modules: List[MoodleModule]

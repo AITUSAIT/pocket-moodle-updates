@@ -1,21 +1,18 @@
 import asyncio
+import logging
 import traceback
 
 import aiohttp
 
-from config import DB_DB, DB_HOST, DB_PASSWD, DB_PORT, DB_USER, IS_UPDATE_CONTENT, MAIN_HOST, SERVER_TOKEN
 from functions.moodle import check_updates
-from functions.moodle_contents import MoodleContents
-from modules.database import DB
-from modules.logger import Logger
-
-Logger.load_config()
+from modules.pm_api.api import PocketMoodleAPI
+from modules.pm_api.models import User
 
 
-async def run_update_check(user) -> str:
+async def run_update_check(user: User) -> str:
     """Check for updates for a specific user."""
     try:
-        return await check_updates(user["user_id"])
+        return await check_updates(user.user_id)
     except aiohttp.ClientConnectionError:
         return "MOODLE CONNECTION FAILED"
     except asyncio.TimeoutError:
@@ -26,58 +23,28 @@ async def run_update_check(user) -> str:
         return "Unexpected Error"
 
 
-async def process_user_update(session, user, params):
+async def process_user_update(user: User):
     """Process update for a single user and send the result to the server."""
     result = await run_update_check(user)
 
-    update_data = {
-        "user_id": user["user_id"],
-        "log": result,
-    }
-
-    async with session.post(f"{MAIN_HOST}/api/queue/log", params=params, data=update_data, ssl=False) as response:
-        Logger.info(f"{user['user_id']} - {result} - {response.status}")
-
-
-async def fetch_and_update_user(session, params):
-    """Fetch user data from the server and update their Moodle status."""
-    async with session.get(f"{MAIN_HOST}/api/queue/user", params=params, ssl=False) as response:
-        if response.status == 200:
-            data = await response.json()
-            return data
-
-        Logger.error(await response.json())
-        return None
+    await PocketMoodleAPI().log_queue_result(user_id=user.user_id, log=result)
+    logging.info(f"{user.user_id} - {result}")
 
 
 async def main():
     """Main loop for continuously checking and updating user status."""
-    dsn = f"postgresql://{DB_USER}:{DB_PASSWD}@{DB_HOST}:{DB_PORT}/{DB_DB}"
-    await DB.connect(dsn)
+    while True:
+        try:
+            user = await PocketMoodleAPI().get_user_from_queue()
+        except (aiohttp.ClientConnectionError, asyncio.TimeoutError):
+            logging.error("Failed to connect to Moodle Server")
+            await asyncio.sleep(10)
 
-    params = {"token": SERVER_TOKEN}
-    timeout = aiohttp.ClientTimeout(total=15)
-
-    if not IS_UPDATE_CONTENT:
-        while True:
-            user = {}
-            try:
-                async with aiohttp.ClientSession(timeout=timeout) as session:
-                    user = await fetch_and_update_user(session, params)
-                    if user:
-                        await process_user_update(session, user, params)
-                    await asyncio.sleep(5)
-            except aiohttp.ClientConnectionError:
-                Logger.error("Failed to connect to Moodle Server")
-                await asyncio.sleep(10)
-            except Exception as exc:
-                Logger.error(f"Error processing user {user.get('user_id')}: {str(exc)}", exc_info=True)
-                await asyncio.sleep(5)
-    else:
-        while True:
-            moodle_contents = MoodleContents()
-            await moodle_contents.update_course_contents()
-            await asyncio.sleep(60 * 60)
+        try:
+            await process_user_update(user)
+        except Exception as exc:
+            logging.error(f"Error processing user {user.user_id}: {str(exc)}", exc_info=True)
+            await asyncio.sleep(5)
 
 
 asyncio.run(main())

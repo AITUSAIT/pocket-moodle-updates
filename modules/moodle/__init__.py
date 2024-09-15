@@ -1,36 +1,40 @@
 import asyncio
 from copy import deepcopy
-from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Optional
 
 import aiohttp
 from bs4 import BeautifulSoup
 
 from functions.bot import send
 from functions.functions import clear_md, get_diff_time, replace_grade_name
-from modules.database import CourseDB, DeadlineDB, GradeDB, NotificationDB
-from modules.database.models import Course, Deadline, NotificationStatus
-from modules.database.models import User as UserModel
-from modules.moodle.models import Assignment, MoodleCourse, MoodleCourseWithAssigns, MoodleGradesTable, TableDataItem
+from modules.moodle.models import (
+    MoodleAssignment,
+    MoodleContent,
+    MoodleCourse,
+    MoodleCourseWithAssigns,
+    MoodleGradesTable,
+    MoodleTableDataItem,
+)
+from modules.pm_api.api import PocketMoodleAPI
+from modules.pm_api.models import Course, Deadline, Grade, NotificationStatus, User
 
 from . import exceptions
 
 
-@dataclass
-class User(UserModel):
-    id: int
+class ExtendedUser(User):
     courses: dict[str, Course]
-    msg: str
+    moodle_id: Optional[int]
+    msg: Optional[str]
 
 
 class Moodle:
     # pylint: disable=too-many-public-methods
     BASE_URL = "https://moodle.astanait.edu.kz/"
 
-    def __init__(self, user: User, notifications: NotificationStatus) -> None:
-        self.user = user
-        self.notifications = notifications
+    def __init__(self, user: ExtendedUser, notification_status: NotificationStatus) -> None:
+        self.user: ExtendedUser = user
+        self.notification_status = notification_status
         self.user.msg = None
 
         self.new_grades = ["New grades:"]
@@ -60,15 +64,15 @@ class Moodle:
 
     async def __make_request(
         self,
-        function: str = None,
-        token: str = None,
-        params: dict = None,
-        headers: dict = None,
+        function: str | None = None,
+        token: str | None = None,
+        params: dict | None = None,
+        headers: dict[str, Any] | None = None,
         is_du: bool = False,
         host: str = BASE_URL,
         end_point: str = "/webservice/rest/server.php/",
         timeout: int = 5,
-    ) -> dict | list | int | str:
+    ) -> Any:
         token = token or self.user.api_token
         args = (
             params
@@ -82,8 +86,9 @@ class Moodle:
             return await response.json()
 
     async def __handle_token_error(self, message: str):
-        if not self.notifications.error_check_token:
-            await NotificationDB.set_notification_status(self.user.user_id, "error_check_token", True)
+        if not self.notification_status.error_check_token:
+            self.notification_status.error_check_token = True
+            await PocketMoodleAPI().set_notification_status(self.user.user_id, self.notification_status)
             await send(self.user.user_id, message, True)
 
     async def __check_api_token(self):
@@ -112,22 +117,22 @@ class Moodle:
             return False
         return True
 
-    async def get_users_by_field(self, value: str, field: str = "email") -> dict:
+    async def get_users_by_field(self, value: str, field: str = "email") -> list[dict[str, Any]]:
         return await self.__make_request(
             function="core_user_get_users_by_field", params={"field": field, "values[0]": value}, timeout=10
         )
 
     async def get_courses(self) -> list[MoodleCourse]:
-        if not self.user.id:
-            self.user.id = (await self.get_users_by_field(self.user.mail))[0]["id"]
+        if not self.user.moodle_id:
+            self.user.moodle_id = (await self.get_users_by_field(self.user.mail))[0]["id"]
         result: list[dict[str, Any]] = await self.__make_request(
-            "core_enrol_get_users_courses", params={"userid": self.user.id}, timeout=10
+            "core_enrol_get_users_courses", params={"userid": self.user.moodle_id}, timeout=10
         )
         return [MoodleCourse.model_validate(course) for course in result]
 
     async def get_grades(self, courseid: int):
         result = await self.__make_request(
-            "gradereport_user_get_grades_table", params={"userid": self.user.id, "courseid": courseid}
+            "gradereport_user_get_grades_table", params={"userid": self.user.moodle_id, "courseid": courseid}
         )
         return MoodleGradesTable.model_validate(result["tables"][0])
 
@@ -140,8 +145,9 @@ class Moodle:
         status = data.get("lastattempt", {}).get("submission", {}).get("status", None)
         return status == "submitted", assign_id
 
-    async def course_get_contents(self, course_id: int) -> dict[str, Any]:
-        return await self.__make_request(function="core_course_get_contents", params={"courseid": course_id})
+    async def course_get_sections(self, course_id: int) -> list[MoodleContent]:
+        json_response = await self.__make_request(function="core_course_get_contents", params={"courseid": course_id})
+        return [MoodleContent.model_validate(data) for data in json_response]
 
     async def get_active_courses_ids(self, courses: list[MoodleCourse]) -> list[int]:
         active_courses_ids = []
@@ -152,17 +158,23 @@ class Moodle:
                 active_courses_ids.append(int(course.id))
         return active_courses_ids
 
-    async def add_new_courses(self, courses: list[MoodleCourse], active_courses_ids: list[int]):
-        for course in courses:
-            course_id = str(course.id)
+    async def add_new_courses(self, moodle_courses: list[MoodleCourse], active_courses_ids: list[int]):
+        for moodle_course in moodle_courses:
+            course_id = str(moodle_course.id)
             active = int(course_id) in active_courses_ids
 
+            course = Course(
+                course_id=moodle_course.id,
+                name=moodle_course.shortname,
+                active=active,
+                grades={},
+                deadlines={},
+            )
             if course_id not in self.user.courses:
-                CourseDB.set_course(self.user.user_id, int(course_id), course.shortname, active)
+                await PocketMoodleAPI().link_user_with_course(self.user.user_id, course)
             else:
                 if self.user.courses[course_id].active != active:
-                    CourseDB.update_course_user_pair(self.user.user_id, int(course_id), active)
-        await CourseDB.commit()
+                    await PocketMoodleAPI().update_user_link_with_course(self.user.user_id, course)
 
     async def set_grades(self, courses_grades_table: list[MoodleGradesTable], course_ids: list[int]):
         for grade_table in self.filter_courses_by_ids(courses_grades_table, course_ids):
@@ -178,55 +190,53 @@ class Moodle:
         return [grade_table for grade_table in courses_grades_table if grade_table.courseid in course_ids]
 
     async def process_grades(self, grades_table: MoodleGradesTable, course: Course, url_to_course: str):
-        for grade in grades_table.tabledata:
-            if isinstance(grade, list):
+        for moodle_grade in grades_table.tabledata:
+            if isinstance(moodle_grade, list):
                 continue
-            if not grade.percentage:
+            if not moodle_grade.percentage:
                 continue
-            if not grade.percentage.content:
+            if not moodle_grade.percentage.content:
                 continue
 
-            name, grade_id, percentage = self.extract_grade_details(grade)
-            await self.update_or_create_grade(course, grade_id, name, percentage, url_to_course)
+            grade = self.extract_grade_details(moodle_grade)
+            if not grade:
+                return
 
-    def extract_grade_details(self, grade: TableDataItem) -> tuple[str, str, str]:
+            await self.update_or_create_grade(course, grade, url_to_course)
+
+    def extract_grade_details(self, grade: MoodleTableDataItem) -> None | Grade:
         name = replace_grade_name(BeautifulSoup(grade.itemname.content, "lxml").text)
+        if not grade.itemname.id or not grade.percentage or not grade.percentage.content:
+            return None
+
         grade_id = str(grade.itemname.id.split("_")[1])
         if name in self.grade_id_mapping:
             grade_id = self.grade_id_mapping[name]
         percentage = grade.percentage.content.replace(",", ".")
-        return name, grade_id, percentage
 
-    async def update_or_create_grade(
-        self, course: Course, grade_id: str, name: str, percentage: str, url_to_course: str
-    ):
-        if grade_id not in course.grades:
-            await self.add_new_grade(course, grade_id, name, percentage, url_to_course)
-        elif str(percentage) != str(course.grades[grade_id].percentage):
-            await self.update_existing_grade(course, grade_id, name, percentage, url_to_course)
+        return Grade(grade_id=int(grade_id), name=name, percentage=percentage)
 
-    async def add_new_grade(self, course: Course, grade_id: str, name: str, percentage: str, url_to_course: str):
-        if "%" in percentage:
-            if not self.course_state_new_grades:
-                if len(self.new_grades[self.index_new_grades]) > 2000:
-                    self.index_new_grades += 1
-                    self.new_grades.append("")
+    async def update_or_create_grade(self, course: Course, grade: Grade, url_to_course: str):
+        if str(grade.grade_id) not in course.grades:
+            await self.add_new_grade(course, grade, url_to_course)
+        elif str(grade.percentage) != str(course.grades[str(grade.grade_id)].percentage):
+            await self.update_existing_grade(course, grade, url_to_course)
 
-                self.course_state_new_grades = 1
-                self.new_grades[self.index_new_grades] += f"\n\n  [{clear_md(course.name)}]({clear_md(url_to_course)}):"
+    async def add_new_grade(self, course: Course, grade: Grade, url_to_course: str):
+        if not self.course_state_new_grades:
+            if len(self.new_grades[self.index_new_grades]) > 2000:
+                self.index_new_grades += 1
+                self.new_grades.append("")
 
-            self.append_new_grade(name, clear_md(percentage))
-            await GradeDB.set_grade(
-                user_id=self.user.user_id,
-                course_id=course.course_id,
-                grade_id=int(grade_id),
-                name=name,
-                percentage=percentage,
-            )
+            self.course_state_new_grades = 1
+            self.new_grades[self.index_new_grades] += f"\n\n  [{clear_md(course.name)}]({clear_md(url_to_course)}):"
 
-    async def update_existing_grade(self, course: Course, grade_id: str, name: str, percentage: str, url_to_course: str):
-        old_grade = course.grades[grade_id].percentage
-        if percentage != "Error" and not (percentage == "-" and old_grade == "Error"):
+        self.append_new_grade(grade.name, clear_md(grade.percentage))
+        await PocketMoodleAPI().link_user_with_grade(user_id=self.user.user_id, course=course, grade=grade)
+
+    async def update_existing_grade(self, course: Course, grade: Grade, url_to_course: str):
+        old_grade = course.grades[str(grade.grade_id)].percentage
+        if grade.percentage != "Error" and not (grade.percentage == "-" and old_grade == "Error"):
             if not self.course_state_updated_grades:
                 if len(self.updated_grades[self.index_updated_grades]) > 2000:
                     self.index_updated_grades += 1
@@ -237,10 +247,8 @@ class Moodle:
                     self.index_updated_grades
                 ] += f"\n\n  [{clear_md(course.name)}]({clear_md(url_to_course)}):"
 
-            self.append_updated_grade(name, f"{clear_md(old_grade)} \-\> *{clear_md(percentage)}*")
-            await GradeDB.update_grade(
-                user_id=self.user.user_id, course_id=course.course_id, grade_id=int(grade_id), percentage=percentage
-            )
+            self.append_updated_grade(grade.name, f"{clear_md(old_grade)} \-\> *{clear_md(grade.percentage)}*")
+            await PocketMoodleAPI().update_user_link_with_grade(user_id=self.user.user_id, course=course, grade=grade)
 
     def append_updated_grade(self, name: str, percentage: str):
         self.updated_grades[self.index_updated_grades] += f"\n      {clear_md(name)}\: {percentage}"
@@ -248,7 +256,7 @@ class Moodle:
     def append_new_grade(self, name: str, percentage: str):
         self.new_grades[self.index_new_grades] += f"\n      {clear_md(name)}\: {percentage}"
 
-    def notify_new_deadline(self, course: Course, assign: Assignment):
+    def notify_new_deadline(self, course: Course, assign: MoodleAssignment):
         course_name, assign_name, assign_due, assign_url = self.get_assign_details(course, assign)
         diff_time = get_diff_time(assign_due)
 
@@ -257,7 +265,7 @@ class Moodle:
 
         self.append_new_deadline(course_name, assign_name, assign_due, assign_url, diff_time)
 
-    def get_assign_details(self, course: Course, assign: Assignment) -> tuple[str, str, str, str]:
+    def get_assign_details(self, course: Course, assign: MoodleAssignment) -> tuple[str, str, str, str]:
         assign_due = datetime.fromtimestamp(assign.duedate).strftime("%A, %d %B %Y, %I:%M %p")
         assign_url = f"{self.BASE_URL}/mod/assign/view.php?id={assign.cmid}"
         return course.name, assign.name, assign_due, assign_url
@@ -278,30 +286,32 @@ class Moodle:
             f"\n      Remaining: {clear_md(diff_time)}\n"
         )
 
-    async def set_update_remind_assign(self, assign: Assignment, course: Course, submitted_dict: dict[str, bool]):
-        assignment_graded = bool(int(assign.grade))
+    async def set_update_remind_assign(self, assign: MoodleAssignment, course: Course, submitted_dict: dict[str, bool]):
         submitted = submitted_dict[str(assign.id)]
         cm_id = str(assign.cmid)
 
+        deadline = Deadline(
+            id=assign.cmid,
+            assign_id=assign.id,
+            name=assign.name,
+            due=datetime.fromtimestamp(assign.duedate),
+            graded=bool(int(assign.grade)),
+            submitted=submitted_dict[str(assign.id)],
+            status={"status03": 0, "status1": 0, "status2": 0, "status3": 0},
+        )
         if cm_id not in course.deadlines:
             if not submitted:
                 self.notify_new_deadline(course, assign)
-            await self.save_new_deadline(course, assign, submitted, assignment_graded)
+            await self.save_new_deadline(course, deadline)
         else:
-            await self.update_existing_deadline(course, assign, submitted, assignment_graded)
+            await self.update_existing_deadline(course, assign, submitted)
 
-    async def save_new_deadline(self, course: Course, assign: Assignment, submitted: bool, assignment_graded: bool):
-        DeadlineDB.set_deadline(
-            user_id=self.user.user_id,
-            course_id=course.course_id,
-            deadline_id=int(assign.cmid),
-            assign_id=int(assign.id),
-            name=assign.name,
-            due=datetime.fromtimestamp(assign.duedate),
-            graded=assignment_graded,
-            submitted=submitted,
-            status={"status03": 0, "status1": 0, "status2": 0, "status3": 0},
-        )
+    async def save_new_deadline(
+        self,
+        course: Course,
+        deadline: Deadline,
+    ):
+        await PocketMoodleAPI().link_user_with_deadline(user_id=self.user.user_id, course=course, deadline=deadline)
 
     def append_updated_deadline(
         self, course_name: str, assign_name: str, assign_due: str, assign_url: str, diff_time: timedelta
@@ -321,9 +331,7 @@ class Moodle:
             f"\n      Remaining: {clear_md(diff_time)}\n"
         )
 
-    async def update_existing_deadline(
-        self, course: Course, assign: Assignment, submitted: bool, assignment_graded: bool
-    ):
+    async def update_existing_deadline(self, course: Course, assign: MoodleAssignment, submitted: bool):
         course_name, assign_name, assign_due, assign_url = self.get_assign_details(course, assign)
         deadline = course.deadlines[str(assign.cmid)]
         diff_time = get_diff_time(datetime.fromtimestamp(assign.duedate).strftime("%A, %d %B %Y, %I:%M %p"))
@@ -335,15 +343,11 @@ class Moodle:
             and deadline.submitted == submitted
         ):
             return
+        deadline.due = datetime.fromtimestamp(assign.duedate)
+        deadline.submitted = submitted
         self.append_updated_deadline(course_name, assign_name, assign_due, assign_url, diff_time)
-        DeadlineDB.update_deadline(
-            user_id=self.user.user_id,
-            deadline_id=int(assign.cmid),
-            name=assign.name,
-            due=datetime.fromtimestamp(assign.duedate),
-            graded=assignment_graded,
-            submitted=submitted,
-            status=deadline.status,
+        await PocketMoodleAPI().update_user_link_with_deadline(
+            user_id=self.user.user_id, course=course, deadline=deadline
         )
 
     async def set_assigns(self, courses_assigns: list[MoodleCourseWithAssigns]):
@@ -370,7 +374,7 @@ class Moodle:
         results = await asyncio.gather(*tasks)
         return {id: submitted for submitted, id in results}
 
-    async def check_reminders(self, deadline: Deadline, diff_time: timedelta, course: Course, assign: Assignment):
+    async def check_reminders(self, deadline: Deadline, diff_time: timedelta, course: Course, assign: MoodleAssignment):
         """
         Check for reminders based on the remaining time (diff_time) for the assignment.
         Update the deadline's status to trigger reminders accordingly.
