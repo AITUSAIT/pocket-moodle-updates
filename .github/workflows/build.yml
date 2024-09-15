@@ -44,26 +44,17 @@ jobs:
         run: |
           cd /home/aitusa/server_side_configs/
           git pull
-          ./reload_pm.sh
-
-      - name: Send Telegram Notify To Pocket Moodle Chat
-        if: github.event_name == 'release'
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: |
-            ${{ github.actor }} released ${{ github.event.release.name }} of Pocket Moodle Updates:
-
-            ${{ github.event.release.body }}
+          ./reload_pm.sh pocket-moodle-updates ${{ github.event.inputs.docker_tag || (github.event_name == 'release' && 'production') }}
 
       - name: Send Telegram Notify To IT Chat
-        if: github.event_name != 'release'
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_TO_IT }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: 'html'
           message: |
-            ${{ github.actor }} builded and deployed Pocket Moodle Updates ${{ github.event.inputs.docker_tag }}:
-
-            https://github.com/${{github.repository}}/commit/${{github.sha}}/checks/${{github.run_id}}
+            <b>${{ github.actor }}</b> deployed <b>Pocket Moodle Updates</b>
+            Environment: <code>${{ github.event.inputs.docker_tag }}</code>
+            Branch: <a href="https://github.com/${{github.repository}}/tree/${{github.ref_name}}">${{github.ref_name}}</a>
+            
+            <a href="https://github.com/${{github.repository}}/commit/${{github.sha}}/checks/${{github.run_id}}">Workflow run</a>
