@@ -74,9 +74,11 @@ class UsersAPI(BaseAPI):
         json_response = await response.json()
         assert json_response.get("success") is True
 
-    async def update_user_link_with_deadline(self, user_id: int, deadline: Deadline):
-        response: ClientResponse = await self.patch(
-            f"/api/users/{user_id}/deadline", json=deadline.to_dict(json_support=True)
-        )
+    async def update_user_link_with_deadline(self, user_id: int, course: Course, deadline: Deadline):
+        data = {
+            "course": course.to_dict(json_support=True),
+            "deadline": deadline.to_dict(json_support=True),
+        }
+        response: ClientResponse = await self.patch(f"/api/users/{user_id}/deadline", json=data)
         json_response = await response.json()
         assert json_response.get("success") is True

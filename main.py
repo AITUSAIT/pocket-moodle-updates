@@ -36,7 +36,7 @@ async def main():
     while True:
         try:
             user = await PocketMoodleAPI().get_user_from_queue()
-        except aiohttp.ClientConnectionError:
+        except (aiohttp.ClientConnectionError, asyncio.TimeoutError):
             logging.error("Failed to connect to Moodle Server")
             await asyncio.sleep(10)
 

@@ -217,23 +217,22 @@ class Moodle:
         return Grade(grade_id=int(grade_id), name=name, percentage=percentage)
 
     async def update_or_create_grade(self, course: Course, grade: Grade, url_to_course: str):
-        if grade.grade_id not in course.grades:
+        if str(grade.grade_id) not in course.grades:
             await self.add_new_grade(course, grade, url_to_course)
         elif str(grade.percentage) != str(course.grades[str(grade.grade_id)].percentage):
             await self.update_existing_grade(course, grade, url_to_course)
 
     async def add_new_grade(self, course: Course, grade: Grade, url_to_course: str):
-        if "%" in grade.percentage:
-            if not self.course_state_new_grades:
-                if len(self.new_grades[self.index_new_grades]) > 2000:
-                    self.index_new_grades += 1
-                    self.new_grades.append("")
+        if not self.course_state_new_grades:
+            if len(self.new_grades[self.index_new_grades]) > 2000:
+                self.index_new_grades += 1
+                self.new_grades.append("")
 
-                self.course_state_new_grades = 1
-                self.new_grades[self.index_new_grades] += f"\n\n  [{clear_md(course.name)}]({clear_md(url_to_course)}):"
+            self.course_state_new_grades = 1
+            self.new_grades[self.index_new_grades] += f"\n\n  [{clear_md(course.name)}]({clear_md(url_to_course)}):"
 
-            self.append_new_grade(grade.name, clear_md(grade.percentage))
-            await PocketMoodleAPI().link_user_with_grade(user_id=self.user.user_id, course=course, grade=grade)
+        self.append_new_grade(grade.name, clear_md(grade.percentage))
+        await PocketMoodleAPI().link_user_with_grade(user_id=self.user.user_id, course=course, grade=grade)
 
     async def update_existing_grade(self, course: Course, grade: Grade, url_to_course: str):
         old_grade = course.grades[str(grade.grade_id)].percentage
@@ -347,7 +346,9 @@ class Moodle:
         deadline.due = datetime.fromtimestamp(assign.duedate)
         deadline.submitted = submitted
         self.append_updated_deadline(course_name, assign_name, assign_due, assign_url, diff_time)
-        await PocketMoodleAPI().update_user_link_with_deadline(user_id=self.user.user_id, deadline=deadline)
+        await PocketMoodleAPI().update_user_link_with_deadline(
+            user_id=self.user.user_id, course=course, deadline=deadline
+        )
 
     async def set_assigns(self, courses_assigns: list[MoodleCourseWithAssigns]):
         for course_assigns in self.filter_active_courses_assigns(courses_assigns):
