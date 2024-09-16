@@ -5,6 +5,7 @@ from typing import Any, Optional
 
 import aiohttp
 from bs4 import BeautifulSoup
+from line_profiler import profile
 
 from functions.bot import send
 from functions.functions import clear_md, get_diff_time, replace_grade_name
@@ -125,8 +126,6 @@ class Moodle:
         )
 
     async def get_courses(self) -> list[MoodleCourse]:
-        if not self.user.moodle_id:
-            self.user.moodle_id = (await self.get_users_by_field(self.user.mail))[0]["id"]
         result: list[dict[str, Any]] = await self.__make_request(
             "core_enrol_get_users_courses", params={"userid": self.user.moodle_id}, timeout=10
         )
@@ -337,10 +336,7 @@ class Moodle:
         deadline = self.deadlines[str(assign.cmid)]
         diff_time = get_diff_time(datetime.fromtimestamp(assign.duedate).strftime("%A, %d %B %Y, %I:%M %p"))
         await self.check_reminders(deadline, diff_time, course, assign)
-        if (
-            assign.duedate != deadline.due.timestamp()
-            or deadline.submitted != submitted
-        ):
+        if assign.duedate != deadline.due.timestamp() or deadline.submitted != submitted:
             self.append_updated_deadline(course_name, assign_name, assign_due, assign_url, diff_time)
         deadline.due = datetime.fromtimestamp(assign.duedate)
         deadline.submitted = submitted

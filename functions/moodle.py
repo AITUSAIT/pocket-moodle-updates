@@ -1,33 +1,36 @@
 import asyncio
 
+from line_profiler import profile
+
 from functions.bot import send
 from modules.moodle import ExtendedUser, Moodle
 from modules.moodle.models import MoodleCourse, MoodleCourseWithAssigns, MoodleGradesTable
 from modules.pm_api.api import PocketMoodleAPI
+from modules.pm_api.models import User
 
 
-async def check_updates(user_id: int) -> str:
-    user = await PocketMoodleAPI().get_user(user_id)
-    if not user:
-        return f"There is no user with this {user_id=}!"
-
+@profile
+async def check_updates(user: User) -> str:
     extended_user = ExtendedUser(
         user_id=user.user_id,
         api_token=user.api_token,
         register_date=user.register_date,
         mail=user.mail,
         last_active=user.last_active,
-        moodle_id=None,
-        courses=(await PocketMoodleAPI().get_courses(user_id)),
+        moodle_id=user.moodle_id,
+        courses=(await PocketMoodleAPI().get_courses(user.user_id)),
         msg=None,
         is_admin=user.is_admin,
         is_manager=user.is_manager,
     )
-    settings = await PocketMoodleAPI().get_settings(user_id)
+    settings = await PocketMoodleAPI().get_settings(extended_user.user_id)
 
     moodle = Moodle(extended_user, await PocketMoodleAPI().get_notification_status(extended_user.user_id))
-    if not await moodle.check():
-        return "Failed to check Token and Email"
+    if not extended_user.moodle_id:
+        extended_user.moodle_id = (await moodle.get_users_by_field(extended_user.mail))[0]["id"]
+        if not extended_user.moodle_id:
+            return "Cannot get Moodle ID"
+        await PocketMoodleAPI().set_moodle_id(extended_user.user_id, extended_user.moodle_id)
 
     moodle_courses: list[MoodleCourse] = await moodle.get_courses()
     active_courses_ids = await moodle.get_active_courses_ids(moodle_courses)
@@ -36,7 +39,7 @@ async def check_updates(user_id: int) -> str:
         course_ids = active_courses_ids
 
     await moodle.add_new_courses(moodle_courses, active_courses_ids)
-    extended_user.courses = await PocketMoodleAPI().get_courses(user_id)
+    extended_user.courses = await PocketMoodleAPI().get_courses(extended_user.user_id)
 
     courses_grades_table: list[MoodleGradesTable] = await asyncio.gather(
         *[moodle.get_grades(course_id) for course_id in course_ids]
