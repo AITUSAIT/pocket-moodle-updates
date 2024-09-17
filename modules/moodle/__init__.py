@@ -335,14 +335,21 @@ class Moodle:
         course_name, assign_name, assign_due, assign_url = self.get_assign_details(course, assign)
         deadline = self.deadlines[str(assign.cmid)]
         diff_time = get_diff_time(datetime.fromtimestamp(assign.duedate).strftime("%A, %d %B %Y, %I:%M %p"))
+        old_status = deepcopy(deadline.status)
         await self.check_reminders(deadline, diff_time, course, assign)
+
         if assign.duedate != deadline.due.timestamp() or deadline.submitted != submitted:
             self.append_updated_deadline(course_name, assign_name, assign_due, assign_url, diff_time)
-        deadline.due = datetime.fromtimestamp(assign.duedate)
-        deadline.submitted = submitted
-        await PocketMoodleAPI().update_user_link_with_deadline(
-            user_id=self.user.user_id, course=course, deadline=deadline
-        )
+
+            deadline.submitted = submitted
+            deadline.due = datetime.fromtimestamp(assign.duedate)
+            await PocketMoodleAPI().update_user_link_with_deadline(
+                user_id=self.user.user_id, course=course, deadline=deadline
+            )
+        elif old_status != deadline.status:
+            await PocketMoodleAPI().update_user_link_with_deadline(
+                user_id=self.user.user_id, course=course, deadline=deadline
+            )
 
     async def set_assigns(self, courses_assigns: list[MoodleCourseWithAssigns]):
         for course_assigns in self.filter_active_courses_assigns(courses_assigns):
