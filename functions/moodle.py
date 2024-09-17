@@ -39,7 +39,6 @@ async def check_updates(user: User) -> str:
         course_ids = active_courses_ids
 
     await moodle.add_new_courses(moodle_courses, active_courses_ids)
-    extended_user.courses = await PocketMoodleAPI().get_courses(extended_user.user_id)
 
     courses_grades_table: list[MoodleGradesTable] = await asyncio.gather(
         *[moodle.get_grades(course_id) for course_id in course_ids]
@@ -53,17 +52,20 @@ async def check_updates(user: User) -> str:
     if not settings.status or not settings.notification_deadline:
         moodle.updated_deadlines, moodle.new_deadlines, moodle.upcoming_deadlines = [], [], []
 
-    if not moodle.notification_status.is_newbie_requested:
-        for items in [
-            moodle.new_grades,
-            moodle.updated_grades,
-            moodle.updated_deadlines,
-            moodle.new_deadlines,
-            moodle.upcoming_deadlines,
-        ]:
-            for item in items:
-                if len(item) > 20:
-                    await send(moodle.user.user_id, item)
+    if moodle.notification_status.is_newbie_requested:
+        moodle.new_grades, moodle.updated_grades = [], []
+        moodle.updated_deadlines, moodle.new_deadlines, moodle.upcoming_deadlines = [], [], []
+
+    for items in [
+        moodle.new_grades,
+        moodle.updated_grades,
+        moodle.updated_deadlines,
+        moodle.new_deadlines,
+        moodle.upcoming_deadlines,
+    ]:
+        for item in items:
+            if len(item) > 20:
+                await send(moodle.user.user_id, item)
 
     if moodle.notification_status.is_update_requested:
         await send(moodle.user.user_id, "Updated\!")

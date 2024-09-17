@@ -174,6 +174,7 @@ class Moodle:
             else:
                 if self.user.courses[course_id].active != active:
                     await PocketMoodleAPI().update_user_link_with_course(self.user.user_id, course)
+            self.user.courses[course_id] = course
 
     async def set_grades(self, courses_grades_table: list[MoodleGradesTable], course_ids: list[int]):
         for grade_table in self.filter_courses_by_ids(courses_grades_table, course_ids):
