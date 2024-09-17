@@ -37,6 +37,14 @@ class UsersAPI(BaseAPI):
         json_response = await response.json()
         assert json_response.get("success") is True
 
+    async def set_moodle_id(self, user_id: int, moodle_id: int):
+        params = {
+            "moodle_id": moodle_id,
+        }
+        response: ClientResponse = await self.post(f"/api/users/{user_id}/set_moodle_id", params=params)
+        json_response = await response.json()
+        assert json_response.get("success") is True
+
     async def link_user_with_course(self, user_id: int, course: Course):
         response: ClientResponse = await self.post(f"/api/users/{user_id}/course", json=course.to_dict())
         json_response = await response.json()
