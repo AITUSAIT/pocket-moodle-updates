@@ -236,7 +236,9 @@ class Moodle:
             self.new_grades[self.index_new_grades] += f"\n\n  [{clear_md(course.name)}]({clear_md(url_to_course)}):"
 
         self.append_new_grade(grade.name, clear_md(grade.percentage))
-        await PocketMoodleAPI().link_user_with_grade(user_id=self.user.user_id, course=course, grade=grade)
+        asyncio.create_task(
+            PocketMoodleAPI().link_user_with_grade(user_id=self.user.user_id, course=course, grade=grade)
+        )
 
     async def update_existing_grade(self, course: Course, grade: Grade, url_to_course: str):
         old_grade = self.grades[str(grade.grade_id)].percentage
@@ -254,7 +256,9 @@ class Moodle:
             ] += f"\n\n  [{clear_md(course.name)}]({clear_md(url_to_course)}):"
 
         self.append_updated_grade(grade.name, f"{clear_md(old_grade)} \-\> *{clear_md(grade.percentage)}*")
-        await PocketMoodleAPI().update_user_link_with_grade(user_id=self.user.user_id, course=course, grade=grade)
+        asyncio.create_task(
+            PocketMoodleAPI().update_user_link_with_grade(user_id=self.user.user_id, course=course, grade=grade)
+        )
 
     def append_updated_grade(self, name: str, percentage: str):
         self.updated_grades[self.index_updated_grades] += f"\n      {clear_md(name)}\: {percentage}"
@@ -317,7 +321,9 @@ class Moodle:
         course: Course,
         deadline: Deadline,
     ):
-        await PocketMoodleAPI().link_user_with_deadline(user_id=self.user.user_id, course=course, deadline=deadline)
+        asyncio.create_task(
+            PocketMoodleAPI().link_user_with_deadline(user_id=self.user.user_id, course=course, deadline=deadline)
+        )
 
     def append_updated_deadline(
         self, course_name: str, assign_name: str, assign_due: str, assign_url: str, diff_time: timedelta
@@ -349,12 +355,16 @@ class Moodle:
 
             deadline.submitted = submitted
             deadline.due = datetime.fromtimestamp(assign.duedate)
-            await PocketMoodleAPI().update_user_link_with_deadline(
-                user_id=self.user.user_id, course=course, deadline=deadline
+            asyncio.create_task(
+                PocketMoodleAPI().update_user_link_with_deadline(
+                    user_id=self.user.user_id, course=course, deadline=deadline
+                )
             )
         elif old_status != deadline.status:
-            await PocketMoodleAPI().update_user_link_with_deadline(
-                user_id=self.user.user_id, course=course, deadline=deadline
+            asyncio.create_task(
+                PocketMoodleAPI().update_user_link_with_deadline(
+                    user_id=self.user.user_id, course=course, deadline=deadline
+                )
             )
 
     async def set_assigns(self, courses_assigns: list[MoodleCourseWithAssigns]):

@@ -65,16 +65,16 @@ async def check_updates(user: User) -> str:
     ]:
         for item in items:
             if len(item) > 20:
-                await send(moodle.user.user_id, item)
+                asyncio.create_task(send(moodle.user.user_id, item))
 
     if moodle.notification_status.is_update_requested:
-        await send(moodle.user.user_id, "Updated\!")
+        asyncio.create_task(send(moodle.user.user_id, "Updated\!"))
         moodle.notification_status.is_update_requested = False
     elif moodle.notification_status.is_newbie_requested:
         moodle.notification_status.is_newbie_requested = False
-        await send(moodle.user.user_id, "Your courses are *ready*\!")
+        asyncio.create_task(send(moodle.user.user_id, "Your courses are *ready*\!"))
 
-    await PocketMoodleAPI().set_notification_status(extended_user.user_id, moodle.notification_status)
+    asyncio.create_task(PocketMoodleAPI().set_notification_status(extended_user.user_id, moodle.notification_status))
 
     del extended_user
     del moodle
