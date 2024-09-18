@@ -224,6 +224,9 @@ class Moodle:
             await self.update_existing_grade(course, grade, url_to_course)
 
     async def add_new_grade(self, course: Course, grade: Grade, url_to_course: str):
+        if grade.percentage == "-":
+            return
+
         if not self.course_state_new_grades:
             if len(self.new_grades[self.index_new_grades]) > 2000:
                 self.index_new_grades += 1
@@ -237,19 +240,21 @@ class Moodle:
 
     async def update_existing_grade(self, course: Course, grade: Grade, url_to_course: str):
         old_grade = self.grades[str(grade.grade_id)].percentage
-        if grade.percentage != "Error" and not (grade.percentage == "-" and old_grade == "Error"):
-            if not self.course_state_updated_grades:
-                if len(self.updated_grades[self.index_updated_grades]) > 2000:
-                    self.index_updated_grades += 1
-                    self.updated_grades.append("")
+        if grade.percentage != "Error" or (grade.percentage == "-" and old_grade == "Error"):
+            return
 
-                self.course_state_updated_grades = 1
-                self.updated_grades[
-                    self.index_updated_grades
-                ] += f"\n\n  [{clear_md(course.name)}]({clear_md(url_to_course)}):"
+        if not self.course_state_updated_grades:
+            if len(self.updated_grades[self.index_updated_grades]) > 2000:
+                self.index_updated_grades += 1
+                self.updated_grades.append("")
 
-            self.append_updated_grade(grade.name, f"{clear_md(old_grade)} \-\> *{clear_md(grade.percentage)}*")
-            await PocketMoodleAPI().update_user_link_with_grade(user_id=self.user.user_id, course=course, grade=grade)
+            self.course_state_updated_grades = 1
+            self.updated_grades[
+                self.index_updated_grades
+            ] += f"\n\n  [{clear_md(course.name)}]({clear_md(url_to_course)}):"
+
+        self.append_updated_grade(grade.name, f"{clear_md(old_grade)} \-\> *{clear_md(grade.percentage)}*")
+        await PocketMoodleAPI().update_user_link_with_grade(user_id=self.user.user_id, course=course, grade=grade)
 
     def append_updated_grade(self, name: str, percentage: str):
         self.updated_grades[self.index_updated_grades] += f"\n      {clear_md(name)}\: {percentage}"
