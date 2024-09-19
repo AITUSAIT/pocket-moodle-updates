@@ -5,7 +5,7 @@ from .models import CourseContent
 
 class CourseContentsAPI(BaseAPI):
     async def get_course_contents(self, course_id: int) -> dict[str, CourseContent]:
-        response = await self.get(f"/api/course_contents/{course_id}")
+        response = await self.get(f"/api/course_contents/{course_id}/")
 
         json_response = await response.json()
         courses: dict[str, CourseContent] = {}

@@ -7,7 +7,7 @@ from .models import Course, Deadline, Grade, User
 
 class UsersAPI(BaseAPI):
     async def get_user(self, user_id: int) -> User | None:
-        response = await self.get(f"/api/users/{user_id}")
+        response = await self.get(f"/api/users/{user_id}/")
         if response.status == 404:
             return None
 
@@ -15,7 +15,7 @@ class UsersAPI(BaseAPI):
         return User.model_validate(json_response)
 
     async def get_users(self) -> list[User]:
-        response = await self.get("/api/users")
+        response = await self.get("/api/users/")
         json_response = await response.json()
         return [User.model_validate(data) for data in json_response]
 
@@ -23,7 +23,7 @@ class UsersAPI(BaseAPI):
         params = {
             "user_id": user_id,
         }
-        response: ClientResponse = await self.post("/api/users", params=params)
+        response: ClientResponse = await self.post("/api/users/", params=params)
         json_response = await response.json()
         assert json_response.get("success") is True
 
@@ -33,7 +33,7 @@ class UsersAPI(BaseAPI):
             "mail": mail,
             "api_token": api_token,
         }
-        response: ClientResponse = await self.post(f"/api/users/{user_id}/register_moodle", params=params)
+        response: ClientResponse = await self.post(f"/api/users/{user_id}/register_moodle/", params=params)
         json_response = await response.json()
         assert json_response.get("success") is True
 
@@ -41,17 +41,17 @@ class UsersAPI(BaseAPI):
         params = {
             "moodle_id": moodle_id,
         }
-        response: ClientResponse = await self.post(f"/api/users/{user_id}/set_moodle_id", params=params)
+        response: ClientResponse = await self.post(f"/api/users/{user_id}/set_moodle_id/", params=params)
         json_response = await response.json()
         assert json_response.get("success") is True
 
     async def link_user_with_course(self, user_id: int, course: Course):
-        response: ClientResponse = await self.post(f"/api/users/{user_id}/course", json=course.to_dict())
+        response: ClientResponse = await self.post(f"/api/users/{user_id}/course/", json=course.to_dict())
         json_response = await response.json()
         assert json_response.get("success") is True
 
     async def update_user_link_with_course(self, user_id: int, course: Course):
-        response: ClientResponse = await self.patch(f"/api/users/{user_id}/course", json=course.to_dict())
+        response: ClientResponse = await self.patch(f"/api/users/{user_id}/course/", json=course.to_dict())
         json_response = await response.json()
         assert json_response.get("success") is True
 
@@ -60,7 +60,7 @@ class UsersAPI(BaseAPI):
             "course": course.to_dict(json_support=True),
             "grade": grade.to_dict(json_support=True),
         }
-        response: ClientResponse = await self.post(f"/api/users/{user_id}/grade", json=data)
+        response: ClientResponse = await self.post(f"/api/users/{user_id}/grade/", json=data)
         json_response = await response.json()
         assert json_response.get("success") is True
 
@@ -69,7 +69,7 @@ class UsersAPI(BaseAPI):
             "course": course.to_dict(json_support=True),
             "grade": grade.to_dict(json_support=True),
         }
-        response: ClientResponse = await self.patch(f"/api/users/{user_id}/grade", json=data)
+        response: ClientResponse = await self.patch(f"/api/users/{user_id}/grade/", json=data)
         json_response = await response.json()
         assert json_response.get("success") is True
 
@@ -78,7 +78,7 @@ class UsersAPI(BaseAPI):
             "course": course.to_dict(json_support=True),
             "deadline": deadline.to_dict(json_support=True),
         }
-        response: ClientResponse = await self.post(f"/api/users/{user_id}/deadline", json=data)
+        response: ClientResponse = await self.post(f"/api/users/{user_id}/deadline/", json=data)
         json_response = await response.json()
         assert json_response.get("success") is True
 
@@ -87,6 +87,6 @@ class UsersAPI(BaseAPI):
             "course": course.to_dict(json_support=True),
             "deadline": deadline.to_dict(json_support=True),
         }
-        response: ClientResponse = await self.patch(f"/api/users/{user_id}/deadline", json=data)
+        response: ClientResponse = await self.patch(f"/api/users/{user_id}/deadline/", json=data)
         json_response = await response.json()
         assert json_response.get("success") is True

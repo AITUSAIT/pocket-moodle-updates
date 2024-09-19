@@ -9,7 +9,7 @@ class DeadlinesAPI(BaseAPI):
             "user_id": user_id,
             "course_id": course_id,
         }
-        response = await self.get("/api/deadlines", params=params)
+        response = await self.get("/api/deadlines/", params=params)
 
         json_response = await response.json()
         deadlines: dict[str, Deadline] = {}

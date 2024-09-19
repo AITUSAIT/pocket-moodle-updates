@@ -9,7 +9,7 @@ class GradesAPI(BaseAPI):
             "user_id": user_id,
             "course_id": course_id,
         }
-        response = await self.get("/api/grades", params=params)
+        response = await self.get("/api/grades/", params=params)
 
         json_response = await response.json()
         grades: dict[str, Grade] = {}

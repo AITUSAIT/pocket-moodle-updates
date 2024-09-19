@@ -12,7 +12,7 @@ class CoursesAPI(BaseAPI):
         }
         if is_active is not None:
             params["is_active"] = int(is_active)
-        response = await self.get("/api/courses", params=params)
+        response = await self.get("/api/courses/", params=params)
 
         json_response = await response.json()
         courses: dict[str, Course] = {}
@@ -25,13 +25,13 @@ class CoursesAPI(BaseAPI):
         params = {
             "user_id": user_id,
         }
-        response = await self.get(f"/api/courses/{course_id}", params=params)
+        response = await self.get(f"/api/courses/{course_id}/", params=params)
 
         json_response = await response.json()
         return Course.model_validate(json_response)
 
     async def is_ready_courses(self, user_id: int) -> bool:
-        response: ClientResponse = await self.get(f"/api/courses/is_ready_courses/{user_id}")
+        response: ClientResponse = await self.get(f"/api/courses/is_ready_courses/{user_id}/")
         json_response = await response.json()
 
         assert json_response.get("success") is True

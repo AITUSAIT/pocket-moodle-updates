@@ -11,7 +11,7 @@ class QueueAPI(BaseAPI):
         params = {
             "token": PM_TOKEN,
         }
-        response: ClientResponse = await self.get("/api/queue/user", params=params)
+        response: ClientResponse = await self.get("/api/queue/user/", params=params)
         json_response = await response.json()
         return User.model_validate(json_response)
 
@@ -34,6 +34,6 @@ class QueueAPI(BaseAPI):
                 "log": log,
             }
         )
-        response: ClientResponse = await self.post("/api/queue/log", params=params, data=data)
+        response: ClientResponse = await self.post("/api/queue/log/", params=params, data=data)
         json_response = await response.json()
         assert json_response.get("success") is True
