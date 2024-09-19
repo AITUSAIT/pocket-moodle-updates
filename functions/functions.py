@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 def clear_md(text):
     text = str(text)
-    symbols = ["_", "*", "[", "]", "(", ")", "~", "`", ">", "#", "+", "-", "=", "|", "{", "}", ".", "!"]
+    symbols = ("_", "*", "[", "]", "(", ")", "~", "`", ">", "#", "+", "-", "=", "|", "{", "}", ".", "!")
 
     for sym in symbols:
         text = text.replace(sym, f"\{sym}")
