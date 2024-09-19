@@ -242,7 +242,7 @@ class Moodle:
 
     async def update_existing_grade(self, course: Course, grade: Grade, url_to_course: str):
         old_grade = self.grades[str(grade.grade_id)].percentage
-        if grade.percentage != "Error" or (grade.percentage == "-" and old_grade == "Error"):
+        if grade.percentage == "Error" or (grade.percentage == "-" and old_grade == "Error"):
             return
 
         if not self.course_state_updated_grades:
