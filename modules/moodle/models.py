@@ -47,7 +47,7 @@ class MoodleCourse(PydanticBaseModel):
     marker: int
     isfavourite: bool
     hidden: bool
-    overviewfiles: List[str]
+    overviewfiles: List[str | dict]
     showactivitydates: bool
     showcompletionconditions: Optional[bool]
     progress: Optional[float]
@@ -84,8 +84,8 @@ class MoodleAssignment(PydanticBaseModel):
     markingallocation: int
     requiresubmissionstatement: int
     preventsubmissionnotingroup: int
-    intro: str
-    introformat: int
+    intro: Optional[str]
+    introformat: Optional[int]
     configs: List[dict] = Field(default_factory=list)
     introfiles: List[dict] = Field(default_factory=list)
     introattachments: List[dict] = Field(default_factory=list)
