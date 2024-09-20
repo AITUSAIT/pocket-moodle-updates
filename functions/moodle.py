@@ -49,7 +49,12 @@ async def check_updates(user: User) -> str:
 
     courses_assigns: list[MoodleCourseWithAssigns] = await moodle.get_assignments()
     await moodle.set_assigns(courses_assigns)
-    if not settings.status or not settings.notification_deadline:
+
+    if not settings.status:
+        moodle.new_grades, moodle.updated_grades = [], []
+        moodle.updated_deadlines, moodle.new_deadlines, moodle.upcoming_deadlines = [], [], []
+
+    if not settings.notification_deadline:
         moodle.updated_deadlines, moodle.new_deadlines, moodle.upcoming_deadlines = [], [], []
 
     if moodle.notification_status.is_newbie_requested:
