@@ -84,11 +84,11 @@ class MoodleAssignment(PydanticBaseModel):
     markingallocation: int
     requiresubmissionstatement: int
     preventsubmissionnotingroup: int
-    intro: Optional[str]
-    introformat: Optional[int]
     configs: List[dict] = Field(default_factory=list)
     introfiles: List[dict] = Field(default_factory=list)
     introattachments: List[dict] = Field(default_factory=list)
+    intro: Optional[str]
+    introformat: Optional[int]
 
 
 class MoodleCourseWithAssigns(PydanticBaseModel):
@@ -100,11 +100,11 @@ class MoodleCourseWithAssigns(PydanticBaseModel):
 
 
 class MoodleTableDataItemDetail(PydanticBaseModel):
+    id: Optional[str] = None
     content: Optional[str] = None
     colspan: Optional[int] = None
     rowspan: Optional[int] = None
     celltype: Optional[str] = None
-    id: Optional[str] = None
     headers: Optional[str] = None
 
 
