@@ -86,7 +86,12 @@ class Moodle:
         timeout_total = aiohttp.ClientTimeout(total=timeout)
         async with aiohttp.ClientSession(host, timeout=timeout_total, headers=headers) as session:
             response = await session.get(end_point, params=args)
-            return await response.json()
+            data = await response.json()
+            if data.get("errorcode") == "invalidtoken":
+                await self.__handle_token_error("Wrong *Moodle Key*, please try registering again❗️")
+                raise exceptions.WrongToken
+
+            return data
 
     async def __handle_token_error(self, message: str):
         if not self.notification_status.error_check_token:
@@ -94,31 +99,8 @@ class Moodle:
             await PocketMoodleAPI().set_notification_status(self.user.user_id, self.notification_status)
             await send(self.user.user_id, message, True)
 
-    async def __check_api_token(self):
-        result = await self.get_users_by_field(self.user.mail, "email")
-
-        if not isinstance(result, list):
-            error_code = result.get("errorcode")
-            if error_code == "invalidtoken":
-                raise exceptions.WrongToken
-            if error_code == "invalidparameter":
-                raise exceptions.WrongMail
-
-        if len(result) != 1:
-            raise exceptions.WrongMail
-
-    async def check(self):
-        try:
-            await self.__check_api_token()
-        except exceptions.WrongToken:
-            await self.__handle_token_error("Wrong *Moodle Key*, please try registering again❗️")
-            return False
-        except exceptions.WrongMail:
-            await self.__handle_token_error("*Email* or *Barcode* not valid, please try registering again❗️")
-            return False
-        except (exceptions.MoodleConnectionFailed, exceptions.TimeoutMoodle, Exception):
-            return False
-        return True
+    async def get_site_info(self):
+        return await self.__make_request(function="core_webservice_get_site_info", timeout=10)
 
     async def get_users_by_field(self, value: str, field: str = "email") -> list[dict[str, Any]]:
         return await self.__make_request(

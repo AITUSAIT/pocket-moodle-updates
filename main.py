@@ -6,6 +6,7 @@ import traceback
 import aiohttp
 
 from functions.moodle import check_updates
+from modules.moodle import exceptions
 from modules.pm_api.api import PocketMoodleAPI
 from modules.pm_api.models import User
 
@@ -18,6 +19,8 @@ async def run_update_check(user: User) -> str:
     """Check for updates for a specific user."""
     try:
         return await check_updates(user)
+    except exceptions.WrongToken:
+        return "WRONG TOKEN"
     except aiohttp.ClientConnectionError:
         return "MOODLE CONNECTION FAILED"
     except asyncio.TimeoutError:
