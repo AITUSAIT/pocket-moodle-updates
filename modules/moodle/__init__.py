@@ -335,8 +335,9 @@ class Moodle:
 
         deadline.submitted = submitted
         deadline.due = datetime.fromtimestamp(assign.duedate)
-        if assign.duedate != deadline.due.timestamp() and submitted == False:
-            self.append_updated_deadline(course_name, assign_name, assign_due, assign_url, diff_time)
+        if assign.duedate != deadline.due.timestamp():
+            if submitted == False:
+                self.append_updated_deadline(course_name, assign_name, assign_due, assign_url, diff_time)
 
             asyncio.create_task(
                 PocketMoodleAPI().update_user_link_with_deadline(
