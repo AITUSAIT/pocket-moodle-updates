@@ -1,5 +1,7 @@
 import asyncio
+import traceback
 
+import aiohttp
 from line_profiler import profile
 
 from functions.bot import send
@@ -40,15 +42,22 @@ async def check_updates(user: User) -> str:
 
     await moodle.add_new_courses(moodle_courses, active_courses_ids)
 
-    courses_grades_table: list[MoodleGradesTable] = await asyncio.gather(
-        *[moodle.get_grades(course_id) for course_id in course_ids]
-    )
-    await moodle.set_grades(courses_grades_table, course_ids)
-    if not settings.status or not settings.notification_grade:
-        moodle.new_grades, moodle.updated_grades = [], []
+    try:
+        courses_grades_table: list[MoodleGradesTable] = await asyncio.gather(
+            *[moodle.get_grades(course_id) for course_id in course_ids]
+        )
+        await moodle.set_grades(courses_grades_table, course_ids)
+        if not settings.status or not settings.notification_grade:
+            moodle.new_grades, moodle.updated_grades = [], []
 
-    courses_assigns: list[MoodleCourseWithAssigns] = await moodle.get_assignments()
-    await moodle.set_assigns(courses_assigns)
+        courses_assigns: list[MoodleCourseWithAssigns] = await moodle.get_assignments()
+        await moodle.set_assigns(courses_assigns)
+    except aiohttp.ClientConnectionError:
+        traceback.print_exc()
+    except asyncio.TimeoutError:
+        traceback.print_exc()
+    except Exception:
+        traceback.print_exc()
 
     if not settings.status:
         moodle.new_grades, moodle.updated_grades = [], []

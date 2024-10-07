@@ -332,17 +332,23 @@ class Moodle:
         old_status = deepcopy(deadline.status)
         await self.check_reminders(deadline, diff_time, course, assign)
 
-        if assign.duedate != deadline.due.timestamp() or deadline.submitted != submitted:
+        deadline.submitted = submitted
+        deadline.due = datetime.fromtimestamp(assign.duedate)
+        if assign.duedate != deadline.due.timestamp() and submitted == False:
             self.append_updated_deadline(course_name, assign_name, assign_due, assign_url, diff_time)
 
-            deadline.submitted = submitted
-            deadline.due = datetime.fromtimestamp(assign.duedate)
             asyncio.create_task(
                 PocketMoodleAPI().update_user_link_with_deadline(
                     user_id=self.user.user_id, course=course, deadline=deadline
                 )
             )
         elif old_status != deadline.status:
+            asyncio.create_task(
+                PocketMoodleAPI().update_user_link_with_deadline(
+                    user_id=self.user.user_id, course=course, deadline=deadline
+                )
+            )
+        elif deadline.submitted != submitted:
             asyncio.create_task(
                 PocketMoodleAPI().update_user_link_with_deadline(
                     user_id=self.user.user_id, course=course, deadline=deadline
