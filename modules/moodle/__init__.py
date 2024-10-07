@@ -87,9 +87,10 @@ class Moodle:
         async with aiohttp.ClientSession(host, timeout=timeout_total, headers=headers) as session:
             response = await session.get(end_point, params=args)
             data = await response.json()
-            if data.get("errorcode") == "invalidtoken":
-                await self.__handle_token_error("Wrong *Moodle Key*, please try registering again❗️")
-                raise exceptions.WrongToken
+            if isinstance(data, dict):
+                if data.get("errorcode") == "invalidtoken":
+                    await self.__handle_token_error("Wrong *Moodle Key*, please try registering again❗️")
+                    raise exceptions.WrongToken
 
             return data
 
