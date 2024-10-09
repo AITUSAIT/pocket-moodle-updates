@@ -247,13 +247,13 @@ class Moodle:
                 self.index_updated_grades
             ] += f"\n\n  [{clear_md(course.name)}]({clear_md(url_to_course)})\n  _{clear_md(course.teacher_name)}_"
 
-        self.append_updated_grade(grade.name, f"{clear_md(old_grade)} \-\> *{grade.percentage}*")
+        self.append_updated_grade(grade.name, f"{clear_md(old_grade)} \-\> *{clear_md(grade.percentage)}*")
         asyncio.create_task(
             PocketMoodleAPI().update_user_link_with_grade(user_id=self.user.user_id, course=course, grade=grade)
         )
 
     def append_updated_grade(self, name: str, percentage: str):
-        self.updated_grades[self.index_updated_grades] += f"\n      {clear_md(name)}\: {clear_md(percentage)}"
+        self.updated_grades[self.index_updated_grades] += f"\n      {clear_md(name)}\: {percentage}"
 
     def append_new_grade(self, name: str, percentage: str):
         self.new_grades[self.index_new_grades] += f"\n      {clear_md(name)}\: *{clear_md(percentage)}*"
