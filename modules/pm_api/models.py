@@ -96,6 +96,7 @@ class Deadline(PydanticBaseModel):
 class Course(PydanticBaseModel):
     course_id: int
     name: str
+    teacher_name: str | None
     active: bool
 
 

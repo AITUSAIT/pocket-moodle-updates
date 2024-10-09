@@ -1,11 +1,11 @@
 import asyncio
 from copy import deepcopy
 from datetime import datetime, timedelta
+from html import unescape
 from typing import Any, Optional
 
 import aiohttp
 from bs4 import BeautifulSoup
-from line_profiler import profile
 
 from functions.bot import send
 from functions.functions import clear_md, get_diff_time, replace_grade_name
@@ -147,9 +147,11 @@ class Moodle:
             course_id = str(moodle_course.id)
             active = int(course_id) in active_courses_ids
 
+            course_name, teacher_name = [elem.strip() for elem in unescape(moodle_course.shortname).rsplit("|", 1)]
             course = Course(
                 course_id=moodle_course.id,
-                name=moodle_course.shortname,
+                name=course_name,
+                teacher_name=teacher_name,
                 active=active,
             )
             if course_id not in self.user.courses:
@@ -157,6 +159,11 @@ class Moodle:
             else:
                 if self.user.courses[course_id].active != active:
                     await PocketMoodleAPI().update_user_link_with_course(self.user.user_id, course)
+                if (
+                    self.user.courses[course_id].name != course_name
+                    or self.user.courses[course_id].teacher_name != teacher_name
+                ):
+                    await PocketMoodleAPI().update_course(course)
             self.user.courses[course_id] = course
 
     async def set_grades(self, courses_grades_table: list[MoodleGradesTable], course_ids: list[int]):
@@ -216,9 +223,11 @@ class Moodle:
                 self.new_grades.append("")
 
             self.course_state_new_grades = 1
-            self.new_grades[self.index_new_grades] += f"\n\n  [{clear_md(course.name)}]({clear_md(url_to_course)}):"
+            self.new_grades[
+                self.index_new_grades
+            ] += f"\n\n  [{clear_md(course.name)}]({clear_md(url_to_course)})\n  _{clear_md(course.teacher_name)}_"
 
-        self.append_new_grade(grade.name, clear_md(grade.percentage))
+        self.append_new_grade(grade.name, grade.percentage)
         asyncio.create_task(
             PocketMoodleAPI().link_user_with_grade(user_id=self.user.user_id, course=course, grade=grade)
         )
@@ -236,27 +245,27 @@ class Moodle:
             self.course_state_updated_grades = 1
             self.updated_grades[
                 self.index_updated_grades
-            ] += f"\n\n  [{clear_md(course.name)}]({clear_md(url_to_course)}):"
+            ] += f"\n\n  [{clear_md(course.name)}]({clear_md(url_to_course)})\n  _{clear_md(course.teacher_name)}_"
 
-        self.append_updated_grade(grade.name, f"{clear_md(old_grade)} \-\> *{clear_md(grade.percentage)}*")
+        self.append_updated_grade(grade.name, f"{clear_md(old_grade)} \-\> *{grade.percentage}*")
         asyncio.create_task(
             PocketMoodleAPI().update_user_link_with_grade(user_id=self.user.user_id, course=course, grade=grade)
         )
 
     def append_updated_grade(self, name: str, percentage: str):
-        self.updated_grades[self.index_updated_grades] += f"\n      {clear_md(name)}\: {percentage}"
+        self.updated_grades[self.index_updated_grades] += f"\n      {clear_md(name)}\: {clear_md(percentage)}"
 
     def append_new_grade(self, name: str, percentage: str):
-        self.new_grades[self.index_new_grades] += f"\n      {clear_md(name)}\: {percentage}"
+        self.new_grades[self.index_new_grades] += f"\n      {clear_md(name)}\: *{clear_md(percentage)}*"
 
     def notify_new_deadline(self, course: Course, assign: MoodleAssignment):
-        course_name, assign_name, assign_due, assign_url = self.get_assign_details(course, assign)
+        _, assign_name, assign_due, assign_url = self.get_assign_details(course, assign)
         diff_time = get_diff_time(assign_due)
 
         if diff_time < timedelta(days=0):
             return
 
-        self.append_new_deadline(course_name, assign_name, assign_due, assign_url, diff_time)
+        self.append_new_deadline(course, assign_name, assign_due, assign_url, diff_time)
 
     def get_assign_details(self, course: Course, assign: MoodleAssignment) -> tuple[str, str, str, str]:
         assign_due = datetime.fromtimestamp(assign.duedate).strftime("%A, %d %B %Y, %I:%M %p")
@@ -264,19 +273,21 @@ class Moodle:
         return course.name, assign.name, assign_due, assign_url
 
     def append_new_deadline(
-        self, course_name: str, assign_name: str, assign_due: str, assign_url: str, diff_time: timedelta
+        self, course: Course, assign_name: str, assign_due: str, assign_url: str, diff_time: timedelta
     ):
         if not self.course_state_new_assigns:
             if len(self.new_deadlines[self.index_new_assigns]) > 2000:
                 self.index_new_assigns += 1
                 self.new_deadlines.append("")
             self.course_state_new_assigns = 1
-            self.new_deadlines[self.index_new_assigns] += f"\n\n  [{clear_md(course_name)}]({clear_md(assign_url)}):"
+            self.new_deadlines[
+                self.index_new_assigns
+            ] += f"\n\n  [{clear_md(course.name)}]({clear_md(assign_url)})\n  _{clear_md(course.teacher_name)}_"
 
         self.new_deadlines[self.index_new_assigns] += (
             f"\n      [{clear_md(assign_name)}]({clear_md(assign_url)})"
-            f"\n      {clear_md(assign_due)}"
-            f"\n      Remaining: {clear_md(diff_time)}\n"
+            f"\n      *{clear_md(assign_due)}*"
+            f"\n      Remaining: *{clear_md(diff_time)}*\n"
         )
 
     async def set_update_remind_assign(self, assign: MoodleAssignment, course: Course, submitted_dict: dict[str, bool]):
@@ -309,7 +320,7 @@ class Moodle:
         )
 
     def append_updated_deadline(
-        self, course_name: str, assign_name: str, assign_due: str, assign_url: str, diff_time: timedelta
+        self, course: Course, assign_name: str, assign_due: str, assign_url: str, diff_time: timedelta
     ):
         if not self.course_state_updated_assigns:
             if len(self.updated_deadlines[self.index_updated_assigns]) > 2000:
@@ -318,16 +329,16 @@ class Moodle:
             self.course_state_updated_assigns = 1
             self.updated_deadlines[
                 self.index_updated_assigns
-            ] += f"\n\n  [{clear_md(course_name)}]({clear_md(assign_url)}):"
+            ] += f"\n\n  [{clear_md(course.name)}]({clear_md(assign_url)})\n  _{clear_md(course.teacher_name)}_"
 
         self.updated_deadlines[self.index_updated_assigns] += (
             f"\n      [{clear_md(assign_name)}]({clear_md(assign_url)})"
-            f"\n      {clear_md(assign_due)}"
-            f"\n      Remaining: {clear_md(diff_time)}\n"
+            f"\n      *{clear_md(assign_due)}*"
+            f"\n      Remaining: *{clear_md(diff_time)}*\n"
         )
 
     async def update_existing_deadline(self, course: Course, assign: MoodleAssignment, submitted: bool):
-        course_name, assign_name, assign_due, assign_url = self.get_assign_details(course, assign)
+        _, assign_name, assign_due, assign_url = self.get_assign_details(course, assign)
         deadline = self.deadlines[str(assign.cmid)]
         diff_time = get_diff_time(datetime.fromtimestamp(assign.duedate).strftime("%A, %d %B %Y, %I:%M %p"))
         old_status = deepcopy(deadline.status)
@@ -336,8 +347,8 @@ class Moodle:
         deadline.submitted = submitted
         deadline.due = datetime.fromtimestamp(assign.duedate)
         if assign.duedate != deadline.due.timestamp():
-            if submitted == False:
-                self.append_updated_deadline(course_name, assign_name, assign_due, assign_url, diff_time)
+            if submitted is False:
+                self.append_updated_deadline(course, assign_name, assign_due, assign_url, diff_time)
 
             asyncio.create_task(
                 PocketMoodleAPI().update_user_link_with_deadline(

@@ -39,3 +39,8 @@ class CoursesAPI(BaseAPI):
         assert "is_ready_courses" in json_response["response"]
 
         return json_response["response"]["is_ready_courses"]
+
+    async def update_course(self, course: Course) -> None:
+        response: ClientResponse = await self.post("/api/courses/", json=course.to_dict())
+        json_response = await response.json()
+        assert json_response.get("success") is True
