@@ -31,7 +31,7 @@ class ExtendedUser(User):
 
 class Moodle:
     # pylint: disable=too-many-public-methods
-    BASE_URL = "https://moodle.astanait.edu.kz/"
+    BASE_URL = "https://85.159.27.128/"
 
     def __init__(self, user: ExtendedUser, notification_status: NotificationStatus) -> None:
         self.user: ExtendedUser = user
