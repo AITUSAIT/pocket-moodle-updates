@@ -1,6 +1,6 @@
 from modules.base_api import BaseAPI
 
-from .models import Deadline
+from .models import Course, Deadline
 
 
 class DeadlinesAPI(BaseAPI):
@@ -17,3 +17,12 @@ class DeadlinesAPI(BaseAPI):
             deadlines[key] = Deadline.model_validate(value)
 
         return deadlines
+
+    async def delete_old_deadline(self, course: Course, deadline: Deadline):
+        data = {
+            "course": course.to_dict(json_support=True),
+            "deadline": deadline.to_dict(json_support=True),
+        }
+        response = await self.delete(f"/api/deadlines/{deadline.id}", json=data)
+        json_response = await response.json()
+        assert json_response.get("success") is True

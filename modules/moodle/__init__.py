@@ -319,6 +319,9 @@ class Moodle:
             PocketMoodleAPI().link_user_with_deadline(user_id=self.user.user_id, course=course, deadline=deadline)
         )
 
+    async def delete_old_deadline(self, course: Course, deadline: Deadline):
+        asyncio.create_task(PocketMoodleAPI().delete_old_deadline(course=course, deadline=deadline))
+
     def append_updated_deadline(
         self, course: Course, assign_name: str, assign_due: str, assign_url: str, diff_time: timedelta
     ):
@@ -346,7 +349,7 @@ class Moodle:
 
         deadline.submitted = submitted
         deadline.due = datetime.fromtimestamp(assign.duedate)
-        if assign.duedate != deadline.due.timestamp():
+        if assign.duedate != deadline.due.timestamp() or assign.name != deadline.name:
             if submitted is False:
                 self.append_updated_deadline(course, assign_name, assign_due, assign_url, diff_time)
 
@@ -385,6 +388,11 @@ class Moodle:
         self.deadlines = await PocketMoodleAPI().get_deadlines(self.user.user_id, course.course_id)
         assignment_ids_to_check = [str(assign.id) for assign in course_assigns.assignments]
         submitted_dict: dict[str, bool] = await self.check_assignments_submissions(assignment_ids_to_check)
+
+        for _, deadline in self.deadlines.items():
+            if deadline.assign_id not in assignment_ids_to_check:
+                await self.delete_old_deadline(course, deadline=deadline)
+
         for assign in course_assigns.assignments:
             await self.set_update_remind_assign(assign, course, submitted_dict)
 

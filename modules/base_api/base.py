@@ -37,3 +37,13 @@ class BaseAPI(metaclass=Singleton):
     ):
         async with aiohttp.ClientSession(self.host, timeout=self.timeout) as session:
             return await session.patch(end_point, params=params, data=data, json=json)
+
+    async def delete(
+        self,
+        end_point: str,
+        params: Mapping[str, Any] | None = None,
+        json: Mapping[str, Any] | None = None,
+        data: aiohttp.FormData | None = None,
+    ):
+        async with aiohttp.ClientSession(self.host, timeout=self.timeout) as session:
+            return await session.delete(end_point, params=params, data=data, json=json)
