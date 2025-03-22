@@ -1,0 +1,26 @@
+[MASTER]
+ignore=venv
+
+[MESSAGES CONTROL]
+disable=
+    missing-docstring,
+    global-variable-not-assigned,
+    anomalous-backslash-in-string,
+    duplicate-code,
+    too-many-arguments,
+    logging-fstring-interpolation,
+    broad-exception-caught,
+    too-many-instance-attributes,
+    redefined-outer-name,
+    too-many-locals,
+    chained-comparison,
+    too-many-branches,
+    line-too-long,
+    too-many-function-args,
+    too-few-public-methods
+
+[FORMAT]
+max-line-length=121
+
+[BASIC]
+good-names=i,j,k,c,_

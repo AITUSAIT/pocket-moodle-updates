@@ -1,0 +1,60 @@
+name: Build and Push Docker Image
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      docker_tag:
+        type: choice
+        description: 'Docker Image Tag'
+        default: 'test'
+        options:
+          - test
+          - dev
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build and Push Docker image
+        run: docker build --tag pocket-moodle-updates:${{ github.event.inputs.docker_tag || github.event_name == 'release' && 'latest' }} .
+      
+      - name: Save Docker layers cache
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+
+      - name: Deploy
+        run: |
+          cd /home/aitusa/server_side_configs/
+          git pull
+          ./reload_pm.sh pocket-moodle-updates ${{ github.event.inputs.docker_tag || (github.event_name == 'release' && 'production') }}
+
+      - name: Send Telegram Notify To IT Chat
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO_IT }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: 'html'
+          message: |
+            <b>${{ github.actor }}</b> deployed <b>Pocket Moodle Updates</b>
+            Environment: <code>${{ github.event.inputs.docker_tag }}</code>
+            Branch: <a href="https://github.com/${{github.repository}}/tree/${{github.ref_name}}">${{github.ref_name}}</a>
+            
+            <a href="https://github.com/${{github.repository}}/commit/${{github.sha}}/checks/${{github.run_id}}">Workflow run</a>

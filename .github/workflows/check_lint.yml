@@ -1,0 +1,43 @@
+name: Code Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  code-checks:
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.dev.txt
+          pip install pylint black isort
+
+      - name: Run isort
+        run: |
+          source venv/bin/activate
+          isort --diff --check-only .
+
+      - name: Run black
+        run: |
+          source venv/bin/activate
+          black --diff --check .
+
+      - name: Run pylint
+        run: |
+          source venv/bin/activate
+          pylint --recursive=y .

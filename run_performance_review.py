@@ -2,11 +2,11 @@ import asyncio
 import logging
 import sys
 import traceback
+from time import time
 
 import aiohttp
 
 from functions.moodle import check_updates
-from modules.moodle import exceptions
 from modules.pm_api.api import PocketMoodleAPI
 from modules.pm_api.models import User
 
@@ -18,9 +18,11 @@ logging.basicConfig(
 async def run_update_check(user: User) -> str:
     """Check for updates for a specific user."""
     try:
-        return await check_updates(user)
-    except exceptions.WrongToken:
-        return "WRONG TOKEN"
+        start = time()
+        result = await check_updates(user)
+        end = time()
+        logging.info(f"{end-start} sec")
+        return result
     except aiohttp.ClientConnectionError:
         return "MOODLE CONNECTION FAILED"
     except asyncio.TimeoutError:
@@ -39,20 +41,12 @@ async def process_user_update(user: User):
     logging.info(f"{user.user_id} - {result}")
 
 
-async def main():
-    """Main loop for continuously checking and updating user status."""
-    while True:
-        try:
-            user = await PocketMoodleAPI().get_user_from_queue()
-        except (aiohttp.ClientConnectionError, asyncio.TimeoutError):
-            logging.error("Failed to connect to Moodle Server")
-            await asyncio.sleep(10)
-
-        try:
-            await process_user_update(user)
-        except Exception as exc:
-            logging.error(f"Error processing user {user.user_id}: {str(exc)}", exc_info=True)
-            await asyncio.sleep(5)
+async def test():
+    user = await PocketMoodleAPI().get_user(626591599)
+    if not user:
+        logging.error("User not found!")
+        return
+    await process_user_update(user)
 
 
-asyncio.run(main())
+asyncio.run(test())

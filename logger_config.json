@@ -1,0 +1,53 @@
+{
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+        "custom": {
+            "format": "{asctime} - {levelname} - {message}",
+            "style": "{",
+            "datefmt": "%d/%m %H:%M:%S"
+        }
+    },
+    "handlers": {
+        "stdout": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "custom"
+        },
+        "file": {
+            "level": "INFO",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": "logs.log",
+            "formatter": "custom",
+            "mode": "w",
+            "maxBytes": 10485760,
+            "backupCount": 2
+        },
+        "file_debug": {
+            "level": "DEBUG",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": "debug.log",
+            "formatter": "custom",
+            "mode": "w",
+            "maxBytes": 10485760,
+            "backupCount": 2
+        }
+    },
+    "loggers": {
+        "aiohttp.access": {
+            "handlers": ["file_debug"],
+            "level": "DEBUG",
+            "propagate": true
+        },
+        "custom": {
+            "handlers": ["stdout", "file"],
+            "level": "INFO",
+            "propagate": true
+        },
+        "aiogram.dispatcher.dispatcher": {
+            "handlers": ["stdout", "file", "file_debug"],
+            "level": "INFO",
+            "propagate": true
+        }
+    }
+}
